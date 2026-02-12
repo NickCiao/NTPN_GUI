@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Feb  2 08:04:08 2022
+Point net model setup and evaluation.
+
+Adapted from Qi et al, (2017) and examples at keras.io
+
+This module implements the PointNet architecture for neural trajectory analysis,
+including T-Net transformers, various ablation models, and critical set extraction.
 
 @author: proxy_loken
-
-adapted from Qi et al, (2017) and examples at keras.io
-
-Point net model setup and evaluation
-
 """
 
+from typing import List, Tuple, Dict, Any, Optional
 import numpy as np
+import numpy.typing as npt
 
 import tensorflow as tf
 from tensorflow import keras
@@ -26,38 +28,74 @@ from keras import layers
 
 # MODEL BUILDING FUNCTIONS
 
-# Convolution layer
-def conv_bn(x, filters):
-    
+def conv_bn(x: Any, filters: int) -> Any:
+    """
+    Convolution layer with batch normalization and ReLU activation.
+
+    Args:
+        x: Input tensor
+        filters: Number of convolutional filters
+
+    Returns:
+        Activated tensor after Conv1D -> BatchNorm -> ReLU
+    """
     x = layers.Conv1D(filters, kernel_size=1, padding='valid')(x)
     x = layers.BatchNormalization(momentum=0.0)(x)
-    
+
     return layers.Activation("relu")(x)
 
-# Dense layer
-def dense_bn(x, filters):
-    
+
+def dense_bn(x: Any, filters: int) -> Any:
+    """
+    Dense layer with batch normalization and ReLU activation.
+
+    Args:
+        x: Input tensor
+        filters: Number of dense units
+
+    Returns:
+        Activated tensor after Dense -> BatchNorm -> ReLU
+    """
     x = layers.Dense(filters)(x)
     x = layers.BatchNormalization(momentum=0.0)(x)
-    
+
     return layers.Activation("relu")(x)
 
-# Regulizer (this constrains the transformation to be near to orthogonal)
+# Regularizer (this constrains the transformation to be near to orthogonal)
 @keras.utils.register_keras_serializable()
 class OrthogonalRegularizer(keras.regularizers.Regularizer):
-    
-    def __init__(self, num_features, l2reg=0.001):
+    """
+    Orthogonal regularizer for T-Net transformation matrices.
+
+    Constrains learned transformations to be near-orthogonal by penalizing
+    the difference between X*X^T and the identity matrix.
+
+    Args:
+        num_features: Dimension of the transformation matrix
+        l2reg: L2 regularization weight (default: 0.001)
+    """
+
+    def __init__(self, num_features: int, l2reg: float = 0.001) -> None:
         self.num_features = num_features
         self.l2reg = l2reg
         self.eye = tf.eye(num_features)
-        
-    def __call__(self, x):
+
+    def __call__(self, x: Any) -> Any:
+        """
+        Compute regularization loss.
+
+        Args:
+            x: Transformation matrix tensor
+
+        Returns:
+            Scalar regularization loss
+        """
         x = tf.reshape(x, (-1, self.num_features, self.num_features))
         xxt = tf.tensordot(x, x, axes=(2,2))
         xxt = tf.reshape(xxt, (-1, self.num_features, self.num_features))
         return tf.reduce_sum(self.l2reg * tf.square(xxt - self.eye))
-    
-    def get_config(self):
+
+    def get_config(self) -> Dict[str, Any]:
         #config=super().get_config()
         #config.update(
         #    {
@@ -73,13 +111,25 @@ class OrthogonalRegularizer(keras.regularizers.Regularizer):
         
         
 
-# Transformer net constructor
-def tnet(inputs, num_features, units=32):
-    
+def tnet(inputs: Any, num_features: int, units: int = 32) -> Any:
+    """
+    Transformer network (T-Net) for feature alignment.
+
+    Learns a transformation matrix to align input features, making the network
+    invariant to rotations and translations.
+
+    Args:
+        inputs: Input tensor
+        num_features: Dimension of features to transform
+        units: Base number of units for layers (default: 32)
+
+    Returns:
+        Transformed features after applying learned transformation
+    """
     # initialize bias as the identity matrix
     bias = keras.initializers.Constant(np.eye(num_features).flatten())
     reg = OrthogonalRegularizer(num_features)
-    
+
     x = conv_bn(inputs, units)
     x = conv_bn(x, units*2)
     x = conv_bn(x, units*16)
@@ -87,17 +137,30 @@ def tnet(inputs, num_features, units=32):
     x = dense_bn(x, units*8)
     x = dense_bn(x, units*4)
     x = layers.Dense(num_features * num_features, kernel_initializer="zeros", bias_initializer=bias, activity_regularizer=reg)(x)
-    
+
     feat_T = layers.Reshape((num_features, num_features))(x)
     # apply affine transform to the input features
     return layers.Dot(axes=(2,1))([inputs, feat_T])
 
 
-# Point net constructor
-def point_net(num_points, num_classes, units=32, dims=1):
-    
+def point_net(num_points: int, num_classes: int, units: int = 32, dims: int = 1) -> keras.Model:
+    """
+    Main PointNet model for neural trajectory classification.
+
+    Implements PointNet with two T-Net transformers for permutation and
+    transformation invariance.
+
+    Args:
+        num_points: Number of points (neurons) in each trajectory
+        num_classes: Number of output classes
+        units: Base number of convolutional filters (default: 32)
+        dims: Input feature dimension per point (default: 1)
+
+    Returns:
+        Compiled Keras model
+    """
     inputs = keras.Input(shape=(num_points, dims))
-    
+
     x = tnet(inputs, dims, units)
     x = conv_bn(x, units)
     x = conv_bn(x, units)
@@ -110,17 +173,28 @@ def point_net(num_points, num_classes, units=32, dims=1):
     x = layers.Dropout(0.3)(x)
     x = dense_bn(x, units*4)
     x = layers.Dropout(0.3)(x)
-    
+
     outputs = layers.Dense(num_classes, activation="softmax")(x)
-    
+
     model = keras.Model(inputs=inputs, outputs=outputs, name='neural_trajectory_point_net')
-    #model.summary()
-    
+
     return model
 
 
 # ABLATION versions of Point Net
-def point_net_no_transform(num_points, num_classes, units=32, dims=1):
+def point_net_no_transform(num_points: int, num_classes: int, units: int = 32, dims: int = 1) -> keras.Model:
+    """
+    PointNet ablation: no T-Net transformers.
+
+    Args:
+        num_points: Number of points (neurons) in each trajectory
+        num_classes: Number of output classes
+        units: Base number of convolutional filters (default: 32)
+        dims: Input feature dimension per point (default: 1)
+
+    Returns:
+        Keras model without transformation networks
+    """
     
     inputs = keras.Input(shape=(num_points, dims))
     
@@ -144,7 +218,7 @@ def point_net_no_transform(num_points, num_classes, units=32, dims=1):
     return model
 
 
-def point_net_no_pool(num_points, num_classes, units=32, dims=1):
+def point_net_no_pool(num_points: int, num_classes: int, units: int = 32, dims: int = 1) -> keras.Model:
     
     inputs = keras.Input(shape=(num_points, dims))
     
@@ -170,7 +244,7 @@ def point_net_no_pool(num_points, num_classes, units=32, dims=1):
     return model
 
 
-def point_net_no_pool_no_transform(num_points, num_classes, units=32, dims=1):
+def point_net_no_pool_no_transform(num_points: int, num_classes: int, units: int = 32, dims: int = 1) -> keras.Model:
     
     inputs = keras.Input(shape=(num_points, dims))
 
@@ -201,7 +275,7 @@ def point_net_no_pool_no_transform(num_points, num_classes, units=32, dims=1):
 
 
 # point net segmentation constructor
-def point_net_segment(num_points, num_classes, units=32, dims=1):
+def point_net_segment(num_points: int, num_classes: int, units: int = 32, dims: int = 1) -> keras.Model:
 
     inputs = keras.Input(shape=(num_points, dims))
     
@@ -244,7 +318,7 @@ def point_net_segment(num_points, num_classes, units=32, dims=1):
 # Visualisation Functions
 
 # run critical points
-def predict_critical(model, samples, layer_name='activation_31'):
+def predict_critical(model: keras.Model, samples: npt.NDArray[np.float32], layer_name: str = 'activation_31') -> npt.NDArray[np.float32]:
     
     # grab the last conv layer before the maxpooling
     #layer_name = 'conv1d_21'
@@ -259,7 +333,7 @@ def predict_critical(model, samples, layer_name='activation_31'):
 
 
 # run upper points
-def predict_upper(model, samples, layer_name = 'global_max_pooling1d_5'):
+def predict_upper(model: keras.Model, samples: npt.NDArray[np.float32], layer_name: str = 'global_max_pooling1d_5') -> Tuple[npt.NDArray[np.float32], npt.NDArray[np.int32]]:
     
     # grab the output of the last max pooling layer
     #layer_name = 'global_max_pooling1d_5'
@@ -275,7 +349,7 @@ def predict_upper(model, samples, layer_name = 'global_max_pooling1d_5'):
 # generate critical points set, also returns mean dimensionality of the critical set
 # INPUTS: crit_preds: predictions of last conv layer on input samples, num_samples: number of samples 
 # to generate critical points for, samples: samples inputs used to generate predictions
-def generate_critical(crit_preds, num_samples, samples):
+def generate_critical(crit_preds: npt.NDArray[np.float32], num_samples: int, samples: npt.NDArray[np.float32]) -> List[List[npt.NDArray[np.float32]]]:
     
     # index points that contribute to maxpooling
     cs_index = np.argmax(crit_preds, axis=1)
@@ -301,7 +375,7 @@ def generate_critical(crit_preds, num_samples, samples):
 # INPUTS: max_preds: maxpool layer predictions on samples, max_unit_preds: conv layer predictions
 # on unit sphere input, num_samples: number of samples to generate for, samples: samples used to
 # generate predictions, unit_sphere: unit sphere points used to generate max output predictions
-def generate_upper(max_preds, max_unit_preds, num_samples, samples, unit_sphere):
+def generate_upper(max_preds: npt.NDArray[np.float32], max_unit_preds: npt.NDArray[np.int32], num_samples: int, samples: npt.NDArray[np.float32], unit_sphere: npt.NDArray[np.float32]) -> List[List[npt.NDArray[np.float32]]]:
     # TODO: Check shapes, reshape if needed
     ups = []
     # extract points that do not change the max of the last conv layer

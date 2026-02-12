@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Nov  3 12:47:28 2023
+Utility functions for PointNet with binned spike counts and labels.
 
-Utility Functions for use with the Point Net used in conjunction with binned spike counts and labels
-
+This module provides data processing, visualization, and analysis utilities
+for neural trajectory point networks.
 
 @author: proxy_loken
 """
 
+from typing import List, Tuple, Optional, Union, Any
 import numpy as np
+import numpy.typing as npt
 import pickle
 
 import tensorflow as tf
@@ -69,13 +71,13 @@ import skimage.io as skio
 
 
 # Pickling/Unpickling Data
-def save_pickle(data, filename):
+def save_pickle(data: Any, filename: str) -> None:
     
     pickle.dump(data, open(filename, 'wb'))
     
 
 
-def load_pickle(filename):    
+def load_pickle(filename: str) -> Any:    
     with open(filename,'rb') as fp:
         l_data = pickle.load(fp)
         
@@ -85,17 +87,28 @@ def load_pickle(filename):
 
 # DATA LOADING FUNCTIONS
 
-# Function to load dataset and labelset from pickle
-# Built to work with the current hubdt output format. Will need to be changed for other data formats
+# Function to load dataset and labelset
+# Now uses safe data loading with automatic format detection
+# Prefers NPZ format, falls back to pickle with security warning
 # TODO: branch to accomodate multilabelset loading
-def load_data_pickle(st_file, label_file, label_name):
-    
-    st_dict = load_pickle(st_file)
-    stbin_list = st_dict['raw_stbins']
-    label_dict = load_pickle(label_file)
-    label_list = label_dict[label_name]
-    
-    return stbin_list, label_list
+def load_data_pickle(st_file: str, label_file: str, label_name: str) -> Tuple[List[npt.NDArray], List[npt.NDArray]]:
+    """
+    Load spike data and labels from files.
+
+    IMPORTANT: This function now uses safe data loading that prefers NPZ format.
+    If you have old pickle files, run: python scripts/migrate_demo_data.py
+
+    Args:
+        st_file: Path to spike data file (.npz or .p)
+        label_file: Path to label file (.npz or .p)
+        label_name: Key name for labels in label file
+
+    Returns:
+        Tuple of (spike_data_list, label_list)
+    """
+    from ntpn.data_loaders import load_data_safe
+
+    return load_data_safe(st_file, label_file, label_name)
 
 
 
@@ -105,7 +118,7 @@ def load_data_pickle(st_file, label_file, label_name):
 # function to extract a set of samples rom a given class for testing/visualisation
 # INPUT: X: data array(3D, select along axis=0), Y: class labels,  num_samples: number of samples to extract (should match batch size),
 # class_label: label of class to extract
-def select_samples(X, Y, num_samples, class_label, return_index=False):
+def select_samples(X: npt.NDArray, Y: npt.NDArray, num_samples: int, class_label: int, return_index: bool = False) -> Union[npt.NDArray, Tuple[npt.NDArray, npt.NDArray]]:
     
     inds = np.argwhere(Y == class_label)
     inds = np.squeeze(inds)
@@ -323,7 +336,7 @@ def std_transform(stbin_list, selection):
 # Project the 1-d time series of stbin into an N-d time series by windowing adjecent time bins, also adjusts the labels
 # The window size is equivalent to the output dimension, ie a window of 3 produces a '3D' projection
 # stride can be adjusted to subsample during the projection (stride of 1 will have N-1 overlap between windows)
-def window_projection(stbin_list, label_list, selection, window_size=3, stride=1):
+def window_projection(stbin_list: List[npt.NDArray], label_list: List[npt.NDArray], selection: List[int], window_size: int = 3, stride: int = 1) -> Tuple[List[npt.NDArray], List[npt.NDArray]]:
     
     if len(selection)<=1:
         SW = SlidingWindow(size=window_size, stride=stride)
@@ -343,7 +356,7 @@ def window_projection(stbin_list, label_list, selection, window_size=3, stride=1
 
 
 # helper for behavioural segmentation. Windows the behavioural labels to match the stbin windowing in the function above
-def window_projection_segments(behav_list, label_list, selection, window_size=3, stride=1):
+def window_projection_segments(behav_list: List[npt.NDArray], label_list: List[npt.NDArray], selection: List[int], window_size: int = 3, stride: int = 1) -> Tuple[List[npt.NDArray], List[npt.NDArray]]:
     
     if len(selection)<=1:
         SW = SlidingWindow(size=window_size, stride=stride)

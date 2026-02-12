@@ -12,13 +12,17 @@ import streamlit as st
 import numpy as np
 
 from ntpn import ntpn_utils
+from ntpn.state_manager import get_state_manager
 
 def dataset_details_import_data():
+    # Get state manager
+    state = get_state_manager()
+
     # sidebar section
     st.sidebar.write('Import a Dataset from a file or files')
-        
+
     # main section
-    st.write('# Current Dataset: ', st.session_state.dataset_name)
+    st.write('# Current Dataset: ', state.data.dataset_name)
     st.write("---")
     
     
@@ -62,18 +66,18 @@ def dataset_details_import_data():
         preprocess_form = st.form(key='preprocess_form')
         
         #select sessions from dataset
-        preprocess_session_select = preprocess_form.multiselect(label='Select Sessions from Dataset', options= [(idx)for idx, item in enumerate(st.session_state.dataset)])
+        preprocess_session_select = preprocess_form.multiselect(label='Select Sessions from Dataset', options= [(idx)for idx, item in enumerate(state.data.dataset)])
         # Trim noise category from samples and labels
-        preprocess_trim_noise = preprocess_form.checkbox(label='Remove Noise Category', value=True)        
+        preprocess_trim_noise = preprocess_form.checkbox(label='Remove Noise Category', value=True)
         # TODO: add more transfrom options, change to list selector
         preprocess_transform_radio = preprocess_form.radio(label='Transform', options=['Raw','Power','Standard'])
-        
-                
+
+
         preprocess_submit = preprocess_form.form_submit_button(label='Pre-Process Dataset')
-        
+
         if preprocess_submit:
-            ntpn_utils.session_select(preprocess_session_select, preprocess_trim_noise)
-            ntpn_utils.samples_transform(preprocess_transform_radio)
+            ntpn_utils.session_select(preprocess_session_select, preprocess_trim_noise, state=state)
+            ntpn_utils.samples_transform(preprocess_transform_radio, state=state)
             
             
             
@@ -90,9 +94,9 @@ def dataset_details_import_data():
         
         
         trajectories_submit = trajectories_form.form_submit_button(label='Create Trajectories')
-        
+
         if trajectories_submit:
-            ntpn_utils.create_trajectories(trajectories_window_size, trajectories_window_stride, trajectories_num_neurons)
+            ntpn_utils.create_trajectories(trajectories_window_size, trajectories_window_stride, trajectories_num_neurons, state=state)
         
         
         
@@ -106,15 +110,20 @@ def dataset_details_import_data():
         train_test_form_submit = train_test_form.form_submit_button(label='Create Training and Validation Sets')
     
         if train_test_form_submit:
-            ntpn_utils.create_train_test(test_size)
+            ntpn_utils.create_train_test(test_size, state=state)
         
     
 def dataset_details_import_model():
+    # Get state manager
+    state = get_state_manager()
+
     # sidebar section
     st.sidebar.write('Import a Model from a file')
-        
+
     # main section
-    st.write('# Current Model: ', st.session_state.model_name)
+    # Note: model_name not yet in StateManager, using legacy key
+    model_name = st.session_state.get('model_name', 'No model loaded')
+    st.write('# Current Model: ', model_name)
     st.write("---")
     
     st.markdown(st.markdown("### Import a Model"))
@@ -129,22 +138,25 @@ def dataset_details_import_model():
 
 
 def dataset_details_export():
+    # Get state manager
+    state = get_state_manager()
+
     # sidebar sectiion
     st.sidebar.write('Export a Model or Data')
-    
+
     # Main section
     st.markdown('### Export')
-    
+
     models_tab, datasets_tab = st.tabs(['Export Model', 'Export Data'])
-    
+
     with models_tab:
         st.markdown('### Model Exporting')
-        
+
         model_export_form=st.form(key='model_export_form')
         model_export_name = model_export_form.text_input(label='Model Name')
         model_export_submit = model_export_form.form_submit_button(label='Export Model')
         if model_export_submit:
-            ntpn_utils.save_model(model_export_name)
+            ntpn_utils.save_model(model_export_name, state=state)
         
         
     with datasets_tab:
@@ -153,9 +165,12 @@ def dataset_details_export():
 
 
 def dataset_details():
+    # Get state manager
+    state = get_state_manager()
+
     # sidebar section
     st.sidebar.markdown("# Dataset")
-    st.sidebar.markdown("Current Dataset: "+ st.session_state.dataset_name)
+    st.sidebar.markdown("Current Dataset: "+ state.data.dataset_name)
     sd_mode_select = st.sidebar.radio(label='Select Mode', options=['Import Data','Import Model','Export'], horizontal=True)
     
     

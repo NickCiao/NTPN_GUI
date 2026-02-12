@@ -23,3 +23,12 @@ ripser>=0.6.0         # Fast Vietoris-Rips persistent homology
 persim>=0.3.0         # Persistence diagram distances and visualizations
 scikit-tda>=1.0.0     # Additional TDA utilities
 # gudhi>=3.8.0        # Not available for ARM64/Python 3.11 - would need local build
+
+# Testing dependencies
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-mock>=3.12.0
+pytest-timeout>=2.2.0
+
+# Type checking
+mypy>=1.8.0

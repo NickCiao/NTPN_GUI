@@ -11,12 +11,17 @@ import streamlit as st
 from ntpn import point_net_utils
 from ntpn import point_net
 from ntpn import ntpn_utils
-
-
+from ntpn.state_manager import get_state_manager
 
 
 def main():
-    
+    # Initialize centralized state manager
+    state = get_state_manager()
+
+    # Sync legacy session_state keys for backward compatibility
+    # This ensures existing pages can still access old session_state keys
+    state.sync_to_legacy()
+
     # Page Management
     landing_page = st.Page('pages/ntpn_landing_page.py', title='NTPN Application')
     import_page = st.Page('pages/import_and_load_page.py', title='Import Models and Data')
