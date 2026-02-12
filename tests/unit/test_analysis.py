@@ -112,8 +112,8 @@ class TestCalcCcaTrajectories:
     def test_exemplar_index_set_to_dummy(self, small_samples):
         exemplar = small_samples[0]
         _, aligned = calc_cca_trajectories(exemplar, small_samples, ex_index=0, ndims=3)
-        # The exemplar index row should be set to 10 (dummy value)
-        np.testing.assert_array_equal(aligned[0], np.full((8, 3), 10.0))
+        # The exemplar index row should be set to NaN (sentinel value)
+        assert np.all(np.isnan(aligned[0]))
 
 
 class TestSelectClosestTrajectories:

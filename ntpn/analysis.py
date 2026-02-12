@@ -154,8 +154,8 @@ def calc_cca_trajectories(exemplar, samples, ex_index, ndims=3):
     aligned_trajs = np.zeros((samples.shape[0], samples.shape[1], ndims))
     for i in range(samples.shape[0]):
         if i == ex_index:
-            # set to an arbitrary value to be ignored in later analysis
-            aligned_trajs[i, :, :] = 10
+            # mark as invalid to be filtered out in later analysis
+            aligned_trajs[i, :, :] = np.nan
             continue
         cca = CCA(n_components=ndims)
         aligned_trajs[i, :, :], example = cca.fit_transform(samples[i], exemplar)
@@ -167,10 +167,13 @@ def calc_cca_trajectories(exemplar, samples, ex_index, ndims=3):
 # returns those trajectories
 def select_closest_trajectories(exemplar, aligned_trajectories, num_examples):
     # calculate the distances between the examplar and all algined trajectories
-    dists = pairwise_distances(
-        np.reshape(aligned_trajectories, (aligned_trajectories.shape[0], -1)), np.reshape(exemplar, (1, -1))
-    )
+    flat = np.reshape(aligned_trajectories, (aligned_trajectories.shape[0], -1))
+    # NaN rows (sentinel for exemplar index) should never be selected as closest
+    nan_mask = np.any(np.isnan(flat), axis=1)
+    flat = np.nan_to_num(flat, nan=0.0)
+    dists = pairwise_distances(flat, np.reshape(exemplar, (1, -1)))
     dists = np.squeeze(dists)
+    dists[nan_mask] = np.inf
     # get the indices of the num_examples smallest distances
     inds = np.argpartition(dists, num_examples)[:num_examples]
     # select those indices from the aligned_trajectories array
@@ -187,17 +190,15 @@ def generate_uniques_from_trajectories(exemplar, trajectories, mode='fixed', thr
     point_set = []
     traj_flat = np.reshape(trajectories.copy(), (-1, trajectories.shape[2]))
     all_points = np.concatenate((exemplar, traj_flat))
-    # overlap = np.ones(len(all_points), dtype=bool)
+    # Filter out NaN sentinel rows before processing
+    nan_mask = ~np.any(np.isnan(all_points), axis=1)
+    all_points = all_points[nan_mask]
     if mode == 'dynamic':
         # TODO: set threshold calculation to something sensible
         threshold = np.std(all_points)
 
     i = 0
     while i < len(all_points) - 1:
-        # check for dummy values to be removed TODO: change the dummy value to nan or somethign else
-        if all_points[i, 0] == 10:
-            all_points = np.delete(all_points, i, axis=0)
-            continue
         # calculate distances between current point and remaining points in the set
         dists = pairwise_distances(all_points[i + 1 :, :], np.reshape(all_points[i, :], (1, -1)))
         # get indices of dists that are below threshold
