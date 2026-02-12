@@ -38,80 +38,120 @@ streamlit run NTPN_APP.py --server.port 8501
 
 ## Architecture
 
+### Package Structure
+
+```
+ntpn/                          # Core package (no Streamlit dependency except ntpn_utils)
+├── point_net.py               # PointNet model architecture
+├── data_processing.py         # Data I/O, sampling, preprocessing, transforms, splitting
+├── analysis.py                # UMAP, PCA, CS processing, CCA alignment
+├── plotting.py                # All matplotlib visualization functions
+├── data_service.py            # Service layer: data pipeline operations
+├── model_service.py           # Service layer: model creation, compilation, training
+├── visualization_service.py   # Service layer: critical set generation, plotting
+├── ntpn_utils.py              # Streamlit-specific utilities (4 functions only)
+├── state_manager.py           # Centralized type-safe state management
+├── data_loaders.py            # Safe data loading (NPZ format with fallback)
+├── ntpn_constants.py          # All configuration constants
+├── logging_config.py          # Structured logging configuration
+├── point_net_utils.py         # Backward-compat facade (re-exports from split modules)
+└── __init__.py
+
+pages/                         # Streamlit page modules
+├── ntpn_landing_page.py       # Landing page with demo data initialization
+├── import_and_load_page.py    # Data import, preprocessing, trajectory creation
+├── train_model_page.py        # Model definition, compilation, training
+├── ntpn_visualisations_page.py # Critical set generation and plotting
+├── mapper_page.py             # Mapper topology visualization
+└── vrtda_page.py              # Vietoris-Rips persistent homology
+
+tests/
+├── conftest.py                # Shared fixtures
+├── fixtures/sample_data.py    # Test data generators
+├── unit/                      # Unit tests for each module
+├── integration/               # End-to-end pipeline tests
+└── regression/                # Bug fix and backward-compat tests
+```
+
 ### Core Components
 
 **`NTPN_APP.py`** - Main entry point
 - Multi-page Streamlit application using `st.navigation()`
-- Manages page routing to different workflow stages
-- Imports from `ntpn/` package for core functionality
+- Initializes `StateManager` and structured logging at startup
 
-**`ntpn/` package** - Core neural network implementation
-- **`point_net.py`**: PointNet architecture with spatial transformers
-  - `point_net()`: Main model with two T-Net transformers
-  - `tnet()`: Spatial transformer network that aligns inputs/features
-  - `OrthogonalRegularizer`: Custom regularizer constraining transforms to near-orthogonal
-  - Ablation variants: `point_net_no_transform()`, `point_net_no_pool()`, `point_net_no_pool_no_transform()`
-  - `point_net_segment()`: Segmentation variant for point-wise predictions
-  - Visualization functions: `predict_critical()`, `predict_upper()`, `generate_critical()`, `generate_upper()`
-- **`point_net_utils.py`**: Data processing and visualization utilities
-  - Data loading from pickle files
-  - Sliding window projection for trajectory creation
-  - Neuron subsampling and train/test splitting
-  - PCA, UMAP, and CCA alignment for critical sets
-  - Plotting functions for trajectories and critical sets
-- **`ntpn_utils.py`**: Streamlit-specific application utilities
-  - Session state management
-  - Data pipeline orchestration (session selection, transformation, trajectory creation)
-  - Custom training loop for Streamlit progress display
-  - Critical set generation and visualization workflows
-- **`ntpn_constants.py`**: Configuration constants
-  - Demo data file paths
-  - Default parameters
+**Service layer** (`data_service.py`, `model_service.py`, `visualization_service.py`)
+- All business logic lives here, completely Streamlit-free
+- Pages import directly from service modules (no facade indirection)
+- Each service accepts an optional `StateManager` parameter
 
-**`pages/` directory** - Streamlit page modules
-- Each page implements a specific workflow stage
-- Pages are automatically loaded by `st.Page()` in NTPN_APP.py
-- Standard pattern: each page defines a main function that's called at module level
+**`ntpn_utils.py`** - Streamlit-specific utilities (4 functions only)
+- `initialise_session()` — loads demo data into StateManager
+- `train_for_streamlit()` — custom training loop with Streamlit progress bars
+- `train_model()` — dispatches between Streamlit and headless training
+- `draw_image()` — renders images in Streamlit
+
+**`state_manager.py`** - Centralized state management
+- `DataState`, `ModelState`, `VisualizationState`, `UIState` dataclasses
+- `StateManager` class with type-safe property access
+- Singleton via `get_state_manager()`
+- Backward-compatible `sync_to_legacy()` for `st.session_state`
+
+**`point_net.py`** - PointNet architecture
+- `point_net()`: Main model with two T-Net spatial transformers
+- `tnet()`: Spatial transformer network
+- `OrthogonalRegularizer`: Constrains transforms to near-orthogonal
+- Ablation variants: `point_net_no_transform()`, `point_net_no_pool()`, `point_net_no_pool_no_transform()`
+- `point_net_segment()`: Segmentation variant for point-wise predictions
+- Critical/upper set extraction: `generate_critical()`, `generate_upper()`
+
+**Split utility modules** (from the former monolithic `point_net_utils.py`):
+- `data_processing.py` (~440 lines) — Data I/O, sampling, preprocessing, transforms, splitting
+- `analysis.py` (~240 lines) — UMAP, PCA, CS processing, CCA alignment
+- `plotting.py` (~360 lines) — All matplotlib visualization functions
+- `point_net_utils.py` — Thin backward-compat facade re-exporting all 46 functions
 
 ### Data Flow Pipeline
 
-The NTPN workflow follows this sequence:
+1. **Data Loading** (`import_and_load_page.py` -> `data_service`)
+   - Load binned spike counts (neurons x time bins) and labels
+   - Safe NPZ format via `data_loaders.py` (with legacy fallback)
+   - Demo data: `data/demo_data/raw_stbins.npz` and `context_labels.npz`
 
-1. **Data Loading** (`import_and_load_page.py`)
-   - Load binned spike counts (neurons × time bins) and labels from pickle files
-   - Demo data: `data/demo_data/raw_stbins.p` and `context_labels.p`
-   - Session state stores: `dataset`, `labels`
+2. **Data Preprocessing** (`import_and_load_page.py` -> `data_service`)
+   - Session selection, noise removal, power/standard transforms
+   - Sliding window trajectory creation
+   - Neuron subsampling, train/test split into TensorFlow datasets
 
-2. **Data Preprocessing** (`train_model_page.py`)
-   - Session selection: Choose which experimental sessions to include
-   - Noise removal: Optional filtering via `remove_noise_cat()`
-   - Transform: Apply power transform or standard scaling
-   - Trajectory creation: Sliding window over time to create fixed-length trajectories
-   - Neuron subsampling: Randomly sample subset of neurons for each trajectory
-   - Train/test split: Generate TensorFlow datasets
+3. **Model Training** (`train_model_page.py` -> `model_service` + `ntpn_utils`)
+   - Create and compile PointNet model
+   - Train via Streamlit progress loop or headless Keras `fit()`
+   - Save to `models/` directory as `.keras` files
 
-3. **Model Training** (`train_model_page.py`)
-   - Create PointNet model with specified architecture (layer width, trajectory length)
-   - Compile with optimizer and loss function
-   - Train using either standard Keras `fit()` or custom Streamlit loop for progress display
-   - Save trained models to `models/` directory as `.keras` files
+4. **Visualization** (`ntpn_visualisations_page.py` -> `visualization_service`)
+   - Critical set extraction and upper bounds generation
+   - PCA or UMAP dimensionality reduction
+   - CCA alignment across classes
 
-4. **Visualization** (`ntpn_visualisations_page.py`)
-   - **Critical sets**: Extract points in trajectories that maximally activate each feature (contribute to max pooling)
-   - **Upper bounds**: Find boundary of feature space for each class
-   - Dimensionality reduction: PCA or UMAP for 3D visualization
-   - CCA alignment: Align critical sets across classes
-
-5. **Topological Analysis**
-   - **Mapper** (`mapper_page.py`): Graph-based topology visualization using filtered point clouds
-   - **VR-Complexes** (`vrtda_page.py`): Vietoris-Rips complex analysis for persistent homology
+5. **Topological Analysis** (`mapper_page.py`, `vrtda_page.py`)
+   - Mapper graph-based topology visualization
+   - Vietoris-Rips complex persistent homology
 
 ### Key Design Patterns
 
-**Session State Management**
-- Streamlit's `st.session_state` stores all data, models, and intermediate results
-- `ntpn_utils.initialise_session()` sets up initial state with demo data
-- Key state variables: `dataset`, `labels`, `ntpn_model`, `sub_samples`, `train_tensors`, `cs_lists`
+**Import pattern**: Pages import directly from service modules:
+```python
+from ntpn.data_service import session_select, create_trajectories
+from ntpn.model_service import create_model, compile_model
+from ntpn.visualization_service import generate_critical_sets
+```
+
+**State management**: All state flows through `StateManager`:
+```python
+from ntpn.state_manager import get_state_manager
+state = get_state_manager()
+state.data.dataset       # type-safe access
+state.model.ntpn_model
+```
 
 **Model Architecture Invariances**
 - **Permutation invariant**: Order of neurons doesn't matter (max pooling)
@@ -119,47 +159,71 @@ The NTPN workflow follows this sequence:
 - **Identity agnostic**: Works across sessions/subjects without neuron sorting
 
 **Layer Naming Convention**
-- Critical set extraction relies on specific layer names (e.g., `'activation_14'` for the last activation before max pooling)
-- When modifying model architecture, update layer names in `generate_critical_sets()`
+- Critical set extraction relies on specific layer names
+- When modifying model architecture, update layer names in `visualization_service.generate_critical_sets()`
+
+## Testing
+
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run with coverage
+pytest tests/ --cov=ntpn --cov-report=html
+
+# Run specific test categories
+pytest tests/unit/ -v
+pytest tests/integration/ -v
+pytest tests/regression/ -v
+
+# Skip slow tests (UMAP-based)
+pytest tests/ -v -m "not slow"
+```
+
+**Current stats:** 331 tests, 89.3% coverage
+
+## Linting and Formatting
+
+```bash
+# Lint (auto-fix where possible)
+ruff check --fix ntpn/ pages/ tests/
+
+# Format
+ruff format ntpn/ pages/ tests/
+```
+
+Configuration in `pyproject.toml`: Python 3.11+, 120 char lines, single quotes.
 
 ## Dependencies
 
-Core libraries (inferred from imports):
-- `streamlit` - GUI framework
-- `tensorflow` / `keras` - Neural network implementation
-- `numpy`, `pandas` - Data manipulation
-- `scikit-learn` - Preprocessing (PCA, CCA, StandardScaler, train/test split)
-- `umap-learn` - UMAP dimensionality reduction
-- `giotto-tda` - Time series (SlidingWindow) and topological data analysis
-- `matplotlib` - Visualization
-- `scipy`, `scikit-image`, `Pillow` - Additional utilities
+See `requirements.txt` for full list. Key libraries:
+- `streamlit` — GUI framework
+- `tensorflow` / `keras` — Neural network
+- `numpy`, `pandas`, `scipy` — Numerical computing
+- `scikit-learn` — PCA, CCA, preprocessing, splitting
+- `umap-learn` — UMAP dimensionality reduction
+- `kmapper`, `ripser`, `persim`, `scikit-tda` — Topological data analysis
+- `matplotlib`, `Pillow` — Visualization
+- `pytest`, `ruff`, `mypy` — Development tools
 
 ## Development Notes
 
 ### Adding New Pages
 
-To add a new Streamlit page:
 1. Create `pages/new_page.py` with a main function called at module level
 2. Register in `NTPN_APP.py`: `new_page = st.Page('pages/new_page.py', title='Page Title')`
-3. Add to navigation list: `pg = st.navigation([..., new_page])`
+3. Add to navigation list in `st.navigation([...])`
 
 ### Model Architecture Changes
 
-If modifying the PointNet architecture:
 - Update layer width/depth in `point_net.py`
-- Verify layer names for critical set extraction (check with `model.summary()`)
-- Update `layer_name` parameter in `ntpn_utils.generate_critical_sets()` if needed
-- Test with ablation variants to understand impact
+- Verify layer names for critical set extraction (`model.summary()`)
+- Update `layer_name` parameter in `visualization_service.generate_critical_sets()`
+- Test with ablation variants
 
 ### Data Format Requirements
 
 Input data must be:
 - Binned spike counts: List of numpy arrays, shape (neurons, time_bins)
 - Labels: List of numpy arrays with class labels per time bin
-- Stored as pickle files with specific dictionary structure (see `load_data_pickle()`)
-
-### Training Display
-
-Two training modes:
-- `view=True`: Custom training loop with Streamlit progress bars (`train_for_streamlit()`)
-- `view=False`: Standard Keras `model.fit()` for faster training without UI updates
+- Preferred format: NPZ files via `data_loaders.py`

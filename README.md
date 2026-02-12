@@ -56,5 +56,58 @@ D-F) Mapper visualisations of behaviour representations for 3 select behaviours.
 
 Images and captions from [Lindsay, 2024: UBC] (https://doi.org/10.14288/1.0445225)
 
+## Getting Started
 
+### Using Docker (Recommended)
 
+```bash
+docker-compose up --build
+```
+
+The app will be available at http://localhost:8501. See `DOCKER.md` for more options.
+
+### Running Locally
+
+```bash
+pip install -r requirements.txt
+streamlit run NTPN_APP.py
+```
+
+Requires Python 3.11+.
+
+## Project Structure
+
+```
+NTPN_APP.py                    # Streamlit entry point
+ntpn/                          # Core package
+├── point_net.py               # PointNet model architecture
+├── data_processing.py         # Data I/O, sampling, preprocessing
+├── analysis.py                # UMAP, PCA, CCA alignment
+├── plotting.py                # Matplotlib visualization
+├── data_service.py            # Service: data pipeline
+├── model_service.py           # Service: model ops
+├── visualization_service.py   # Service: critical sets & plotting
+├── ntpn_utils.py              # Streamlit-specific utilities
+├── state_manager.py           # Centralized state management
+├── data_loaders.py            # Safe data loading (NPZ)
+├── ntpn_constants.py          # Configuration constants
+└── logging_config.py          # Structured logging
+pages/                         # Streamlit pages
+tests/                         # Unit, integration, regression tests
+```
+
+## Development
+
+```bash
+# Run tests
+pytest tests/ -v
+
+# Run with coverage
+pytest tests/ --cov=ntpn --cov-report=html
+
+# Lint and format
+ruff check --fix ntpn/ pages/ tests/
+ruff format ntpn/ pages/ tests/
+```
+
+331 tests, 89.3% coverage. Configuration in `pyproject.toml`.
