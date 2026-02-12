@@ -62,8 +62,8 @@ pages/                         # Streamlit page modules
 ├── import_and_load_page.py    # Data import, preprocessing, trajectory creation
 ├── train_model_page.py        # Model definition, compilation, training
 ├── ntpn_visualisations_page.py # Critical set generation and plotting
-├── mapper_page.py             # Mapper topology visualization
-└── vrtda_page.py              # Vietoris-Rips persistent homology
+├── mapper_page.py             # Mapper topology visualization (stub — not yet implemented)
+└── vrtda_page.py              # Vietoris-Rips persistent homology (stub — not yet implemented)
 
 tests/
 ├── conftest.py                # Shared fixtures
@@ -114,8 +114,8 @@ tests/
 
 1. **Data Loading** (`import_and_load_page.py` -> `data_service`)
    - Load binned spike counts (neurons x time bins) and labels
-   - Safe NPZ format via `data_loaders.py` (with legacy fallback)
-   - Demo data: `data/demo_data/raw_stbins.npz` and `context_labels.npz`
+   - Safe NPZ format via `data_loaders.py` (with legacy .p fallback for user data)
+   - Demo data: `data/demo_data/raw_stbins.npz` and `context_labels.npz` (NPZ only — legacy .p files removed)
 
 2. **Data Preprocessing** (`import_and_load_page.py` -> `data_service`)
    - Session selection, noise removal, power/standard transforms
@@ -132,9 +132,10 @@ tests/
    - PCA or UMAP dimensionality reduction
    - CCA alignment across classes
 
-5. **Topological Analysis** (`mapper_page.py`, `vrtda_page.py`)
-   - Mapper graph-based topology visualization
-   - Vietoris-Rips complex persistent homology
+5. **Topological Analysis** (`mapper_page.py`, `vrtda_page.py`) — *not yet implemented*
+   - Mapper graph-based topology visualization (planned)
+   - Vietoris-Rips complex persistent homology (planned)
+   - TDA dependencies (kmapper, ripser, persim, scikit-tda) are in requirements.txt for future use
 
 ### Key Design Patterns
 
@@ -202,7 +203,7 @@ See `requirements.txt` for full list. Key libraries:
 - `numpy`, `pandas`, `scipy` — Numerical computing
 - `scikit-learn` — PCA, CCA, preprocessing, splitting
 - `umap-learn` — UMAP dimensionality reduction
-- `kmapper`, `ripser`, `persim`, `scikit-tda` — Topological data analysis
+- `kmapper`, `ripser`, `persim`, `scikit-tda` — Topological data analysis (for future use)
 - `matplotlib`, `Pillow` — Visualization
 - `pytest`, `ruff`, `mypy` — Development tools
 
