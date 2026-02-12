@@ -16,3 +16,10 @@ Pillow>=10.0.0
 # Dimensionality reduction and TDA
 umap-learn>=0.5.5
 # giotto-tda==0.1.4  # Commented out due to complex build requirements in Docker
+
+# Alternative TDA libraries (Docker-friendly with pre-compiled wheels)
+kmapper>=2.0.0        # Mapper algorithm for topological network visualization
+ripser>=0.6.0         # Fast Vietoris-Rips persistent homology
+persim>=0.3.0         # Persistence diagram distances and visualizations
+scikit-tda>=1.0.0     # Additional TDA utilities
+# gudhi>=3.8.0        # Not available for ARM64/Python 3.11 - would need local build

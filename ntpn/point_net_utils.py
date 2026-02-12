@@ -25,16 +25,24 @@ except ImportError:
             self.stride = stride
 
         def fit_transform_resample(self, X, y=None):
-            """Create sliding windows from time series data."""
+            """Create sliding windows from time series data.
+
+            Expects X with shape (n_features, n_timepoints) and transposes internally
+            to match giotto-tda behavior of (n_timepoints, n_features).
+            Returns windows of shape (n_windows, window_size, n_features).
+            """
             X = np.array(X)
             if y is not None:
                 y = np.array(y)
 
-            # Transpose if needed (neurons, time) -> (time, neurons)
-            if X.ndim == 2 and X.shape[0] < X.shape[1]:
+            # Assume input is (neurons/features, time) - transpose to (time, features)
+            if X.ndim == 2:
                 X = X.T
 
-            n_samples = (X.shape[0] - self.size) // self.stride + 1
+            n_timepoints = X.shape[0]
+            n_samples = (n_timepoints - self.size) // self.stride + 1
+
+            # Create windows: shape (n_windows, window_size, n_features)
             windows = np.array([X[i*self.stride:i*self.stride + self.size]
                               for i in range(n_samples)])
 
