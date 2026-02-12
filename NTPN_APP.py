@@ -12,9 +12,13 @@ from ntpn import point_net_utils
 from ntpn import point_net
 from ntpn import ntpn_utils
 from ntpn.state_manager import get_state_manager
+from ntpn.logging_config import setup_logging
 
 
 def main():
+    # Initialize logging
+    setup_logging()
+
     # Initialize centralized state manager
     state = get_state_manager()
 

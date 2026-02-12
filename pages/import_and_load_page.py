@@ -12,6 +12,7 @@ import streamlit as st
 import numpy as np
 
 from ntpn import ntpn_utils
+from ntpn import ntpn_constants
 from ntpn.state_manager import get_state_manager
 
 def dataset_details_import_data():
@@ -87,10 +88,10 @@ def dataset_details_import_data():
         trajectories_form = st.form(key='trajectories_form')
         
         # TODO: add dynamic bounds for window size and stride
-        trajectories_window_size = trajectories_form.number_input(label='Trajectory Length', min_value=1, max_value=64, value=32)
-        trajectories_window_stride = trajectories_form.number_input(label='Trajectory Stride', min_value=1, max_value=64, value=8)
+        trajectories_window_size = trajectories_form.number_input(label='Trajectory Length', min_value=1, max_value=64, value=ntpn_constants.DEFAULT_WINDOW_SIZE)
+        trajectories_window_stride = trajectories_form.number_input(label='Trajectory Stride', min_value=1, max_value=64, value=ntpn_constants.DEFAULT_WINDOW_STRIDE)
         # TODO: Dynamic check for min neurons in selected sessions in dataset
-        trajectories_num_neurons = trajectories_form.number_input(label='Number of Neurons', min_value=2, max_value=64, value=11)
+        trajectories_num_neurons = trajectories_form.number_input(label='Number of Neurons', min_value=2, max_value=64, value=ntpn_constants.DEFAULT_NUM_NEURONS)
         
         
         trajectories_submit = trajectories_form.form_submit_button(label='Create Trajectories')
@@ -106,7 +107,7 @@ def dataset_details_import_data():
                     
         train_test_form = st.form(key='train_test_form')
         # TODO: Add option for fixed set, batch size, augmentation, etc.
-        test_size = train_test_form.number_input(label='Proportion for Validation', min_value=0.1, max_value=0.9, value=0.2)
+        test_size = train_test_form.number_input(label='Proportion for Validation', min_value=0.1, max_value=0.9, value=ntpn_constants.DEFAULT_TEST_SIZE)
         train_test_form_submit = train_test_form.form_submit_button(label='Create Training and Validation Sets')
     
         if train_test_form_submit:

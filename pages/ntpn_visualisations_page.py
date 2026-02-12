@@ -10,6 +10,7 @@ import streamlit as st
 import numpy as np
 
 from ntpn import ntpn_utils
+from ntpn import ntpn_constants
 from ntpn.state_manager import get_state_manager
 
 
@@ -34,7 +35,7 @@ def generate_sets():
         critical_sets_form = st.form(key='critical_sets_form')
 
         critical_sets_number_classes = critical_sets_form.number_input(label='Number of Classes', min_value=1, max_value=100, value=len(np.unique(state.data.sub_labels)))
-        critical_sets_number_samples = critical_sets_form.number_input(label='Number of Samples', min_value=10, max_value=1000, value=100)
+        critical_sets_number_samples = critical_sets_form.number_input(label='Number of Samples', min_value=10, max_value=1000, value=ntpn_constants.DEFAULT_NUM_CRITICAL_SAMPLES)
 
         critical_sets_submit = critical_sets_form.form_submit_button(label='Generate Critical Sets')
 
@@ -63,8 +64,8 @@ def plotting():
         cs_plotting_form = st.sidebar.form(key='cs_plotting_form')
 
         cs_plotting_algo = cs_plotting_form.radio(label='Dimensionality Reduction Algorithm', options=['PCA','UMAP'], horizontal=True)
-        cs_plotting_examples = cs_plotting_form.number_input(label='Number of Examples', min_value=1, max_value=10, value=5)
-        cs_plotting_dims = cs_plotting_form.number_input(label='Number of Dimensions', min_value=2, max_value=3, value=3)
+        cs_plotting_examples = cs_plotting_form.number_input(label='Number of Examples', min_value=1, max_value=10, value=ntpn_constants.DEFAULT_NUM_PLOT_EXAMPLES)
+        cs_plotting_dims = cs_plotting_form.number_input(label='Number of Dimensions', min_value=2, max_value=3, value=ntpn_constants.DEFAULT_PLOT_DIMENSIONS)
         cs_plotting_classes = cs_plotting_form.number_input(label='Number of Classes', min_value=1, max_value=100, value=len(np.unique(state.data.sub_labels)))
 
         cs_plotting_submit = cs_plotting_form.form_submit_button(label='Generate Plots')

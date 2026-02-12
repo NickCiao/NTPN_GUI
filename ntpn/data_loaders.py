@@ -9,10 +9,13 @@ This module provides safer alternatives using NPZ and HDF5 formats.
 """
 
 import numpy as np
-import pickle
+import pickle  # Required for legacy format support - see load_legacy_format()
 import warnings
+import logging
 from pathlib import Path
 from typing import List, Tuple, Dict, Any, Optional, Union
+
+logger = logging.getLogger(__name__)
 
 
 class DataLoadError(Exception):
@@ -348,14 +351,14 @@ def convert_to_safe_format(
         output_dir.mkdir(parents=True, exist_ok=True)
 
     # Load data using legacy loader
-    print(f"Loading data from {input_st_file} and {input_context_file}...")
+    logger.info("Loading data from %s and %s", input_st_file, input_context_file)
     spike_data_list, labels_list = load_legacy_format(input_st_file, input_context_file, context_key)
 
     # Create output file paths
     output_st_file = output_dir / input_st_file.with_suffix('.npz').name
     output_context_file = output_dir / input_context_file.with_suffix('.npz').name
 
-    print(f"Converting to NPZ format...")
+    logger.info("Converting to NPZ format...")
 
     # Save as NPZ with allow_pickle=True for object arrays
     np.savez(
@@ -367,9 +370,7 @@ def convert_to_safe_format(
         **{context_key: np.array(labels_list, dtype=object)}
     )
 
-    print(f"Conversion complete!")
-    print(f"  Output files:")
-    print(f"    {output_st_file}")
-    print(f"    {output_context_file}")
+    logger.info("Conversion complete!")
+    logger.info("  Output files: %s, %s", output_st_file, output_context_file)
 
     return output_st_file, output_context_file

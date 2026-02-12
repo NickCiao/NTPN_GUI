@@ -26,6 +26,8 @@ import numpy as np
 import numpy.typing as npt
 from tensorflow import keras
 
+from ntpn import ntpn_constants
+
 
 @dataclass
 class DataState:
@@ -81,8 +83,8 @@ class ModelState:
     test_tensors: Optional[Any] = None
 
     # Training configuration
-    batch_size: int = 8
-    learning_rate: float = 0.02
+    batch_size: int = ntpn_constants.DEFAULT_BATCH_SIZE
+    learning_rate: float = ntpn_constants.DEFAULT_LEARNING_RATE
 
     # Training infrastructure (Keras objects for Streamlit training loop)
     loss_fn: Optional[Any] = None

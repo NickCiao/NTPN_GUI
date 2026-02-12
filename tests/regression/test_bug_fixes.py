@@ -24,8 +24,8 @@ class TestBugFix1SessionStateTyop:
 
     def test_samples_transform_uses_correct_session_state(self):
         """Verify samples_transform uses StateManager or correct session_state (not st.session typo)."""
-        # Read the source file
-        source_file = Path('ntpn/ntpn_utils.py')
+        # Read the source file (now in data_service.py after service layer extraction)
+        source_file = Path('ntpn/data_service.py')
         with open(source_file, 'r') as f:
             content = f.read()
 
@@ -40,11 +40,11 @@ class TestBugFix1SessionStateTyop:
         assert has_state_manager or has_correct_session_state, \
             "Correct usage not found: should use StateManager (state.data.*) or st.session_state.*"
 
-    @patch('ntpn.ntpn_utils.point_net_utils')
+    @patch('ntpn.data_service.point_net_utils')
     def test_samples_transform_power_calls_with_session_state(self, mock_utils):
         """Test that Power transform uses StateManager correctly."""
         import streamlit as st
-        from ntpn.ntpn_utils import samples_transform
+        from ntpn.data_service import samples_transform
         from ntpn.state_manager import StateManager
 
         # Reset state
@@ -69,11 +69,11 @@ class TestBugFix1SessionStateTyop:
             test_indices
         )
 
-    @patch('ntpn.ntpn_utils.point_net_utils')
+    @patch('ntpn.data_service.point_net_utils')
     def test_samples_transform_standard_calls_with_session_state(self, mock_utils):
         """Test that Standard transform uses StateManager correctly."""
         import streamlit as st
-        from ntpn.ntpn_utils import samples_transform
+        from ntpn.data_service import samples_transform
         from ntpn.state_manager import StateManager
 
         # Reset state
@@ -156,11 +156,13 @@ def test_all_critical_bugs_fixed():
     import ntpn.ntpn_utils as ntpn_utils
     from pathlib import Path
 
-    # Read source files
+    # Read source files (Bug #1 logic now in data_service.py after service extraction)
+    data_service_source = Path('ntpn/data_service.py').read_text()
     ntpn_utils_source = Path('ntpn/ntpn_utils.py').read_text()
     train_page_source = Path('pages/train_model_page.py').read_text()
 
-    # Check Bug #1 is fixed
+    # Check Bug #1 is fixed (check both files)
+    assert 'st.session.select_indices' not in data_service_source
     assert 'st.session.select_indices' not in ntpn_utils_source
 
     # Check Bug #2 is fixed

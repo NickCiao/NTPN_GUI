@@ -10,6 +10,7 @@ import streamlit as st
 import numpy as np
 
 from ntpn import ntpn_utils
+from ntpn import ntpn_constants
 from ntpn.state_manager import get_state_manager
 
 
@@ -29,8 +30,8 @@ def define_model():
     define_model_form.write('Define a NTPN Model')
     # Params: trajectory length, nubmer of classes, units (layer width), dims(number of neurons)
     # TODO: refine min and max value checks
-    define_model_trajectory_length = define_model_form.number_input(label='Trajectory Length', min_value=1, max_value=64, value=32)
-    define_model_layer_width = define_model_form.number_input(label='Layer Width', min_value=8, max_value=64, value=32)
+    define_model_trajectory_length = define_model_form.number_input(label='Trajectory Length', min_value=1, max_value=64, value=ntpn_constants.DEFAULT_TRAJECTORY_LENGTH)
+    define_model_layer_width = define_model_form.number_input(label='Layer Width', min_value=8, max_value=64, value=ntpn_constants.DEFAULT_LAYER_WIDTH)
     define_model_trajectory_dimension = define_model_form.number_input(label='Trajectory Dimension (Neurons)', min_value=1, max_value=100, value=(state.data.sub_samples.shape)[2])
     define_model_number_classes = define_model_form.number_input(label='Number of Classes', min_value=1, max_value=100, value=len(np.unique(state.data.sub_labels)))
 
@@ -72,7 +73,7 @@ def train_model():
         compile_model_form.write('Loss: Sparse Cataegorical')
         compile_model_form.write('Metrics: Sparse Crossentropy')
         compile_model_form.write('Optimizer: ADAM')
-        compile_learning_rate = compile_model_form.number_input(label='Learning Rate', min_value=0.001, max_value = 0.9, value=0.02)
+        compile_learning_rate = compile_model_form.number_input(label='Learning Rate', min_value=0.001, max_value = 0.9, value=ntpn_constants.DEFAULT_LEARNING_RATE)
         compile_model_submit = compile_model_form.form_submit_button(label='Compile Model')
 
         if compile_model_submit:
@@ -83,7 +84,7 @@ def train_model():
 
         train_model_form = st.form(key='train_model_form')
         train_model_progress = train_model_form.checkbox(label='Show Progress', value=True)
-        train_model_epochs = train_model_form.number_input(label='Number of Epochs', min_value=1, max_value=100, value=5)
+        train_model_epochs = train_model_form.number_input(label='Number of Epochs', min_value=1, max_value=100, value=ntpn_constants.DEFAULT_EPOCHS)
         train_model_submit = train_model_form.form_submit_button(label='Train Model')
 
         if train_model_submit:

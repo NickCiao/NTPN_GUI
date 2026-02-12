@@ -19,6 +19,17 @@ import tensorflow as tf
 from tensorflow import keras
 from keras import layers
 
+from ntpn import ntpn_constants
+from ntpn.logging_config import get_logger
+
+logger = get_logger(__name__)
+
+
+def _model_summary_str(model: keras.Model) -> str:
+    """Capture model.summary() output as a string."""
+    lines = []
+    model.summary(print_fn=lambda x: lines.append(x))
+    return '\n'.join(lines)
 
 
 
@@ -40,7 +51,7 @@ def conv_bn(x: Any, filters: int) -> Any:
         Activated tensor after Conv1D -> BatchNorm -> ReLU
     """
     x = layers.Conv1D(filters, kernel_size=1, padding='valid')(x)
-    x = layers.BatchNormalization(momentum=0.0)(x)
+    x = layers.BatchNormalization(momentum=ntpn_constants.BATCH_NORM_MOMENTUM)(x)
 
     return layers.Activation("relu")(x)
 
@@ -57,7 +68,7 @@ def dense_bn(x: Any, filters: int) -> Any:
         Activated tensor after Dense -> BatchNorm -> ReLU
     """
     x = layers.Dense(filters)(x)
-    x = layers.BatchNormalization(momentum=0.0)(x)
+    x = layers.BatchNormalization(momentum=ntpn_constants.BATCH_NORM_MOMENTUM)(x)
 
     return layers.Activation("relu")(x)
 
@@ -75,7 +86,7 @@ class OrthogonalRegularizer(keras.regularizers.Regularizer):
         l2reg: L2 regularization weight (default: 0.001)
     """
 
-    def __init__(self, num_features: int, l2reg: float = 0.001) -> None:
+    def __init__(self, num_features: int, l2reg: float = ntpn_constants.L2_REGULARIZATION) -> None:
         self.num_features = num_features
         self.l2reg = l2reg
         self.eye = tf.eye(num_features)
@@ -170,9 +181,9 @@ def point_net(num_points: int, num_classes: int, units: int = 32, dims: int = 1)
     x = conv_bn(x, units*16)
     x = layers.GlobalMaxPooling1D()(x)
     x = dense_bn(x, units*8)
-    x = layers.Dropout(0.3)(x)
+    x = layers.Dropout(ntpn_constants.DROPOUT_RATE)(x)
     x = dense_bn(x, units*4)
-    x = layers.Dropout(0.3)(x)
+    x = layers.Dropout(ntpn_constants.DROPOUT_RATE)(x)
 
     outputs = layers.Dense(num_classes, activation="softmax")(x)
 
@@ -206,14 +217,14 @@ def point_net_no_transform(num_points: int, num_classes: int, units: int = 32, d
     x = conv_bn(x, units*16)
     x = layers.GlobalMaxPooling1D()(x)
     x = dense_bn(x, units*8)
-    x = layers.Dropout(0.3)(x)
+    x = layers.Dropout(ntpn_constants.DROPOUT_RATE)(x)
     x = dense_bn(x, units*4)
-    x = layers.Dropout(0.3)(x)
+    x = layers.Dropout(ntpn_constants.DROPOUT_RATE)(x)
     
     outputs = layers.Dense(num_classes, activation="softmax")(x)
     
     model = keras.Model(inputs=inputs, outputs=outputs, name='pointnetnotransform')
-    model.summary()
+    logger.debug("Model summary for %s:\n%s", model.name, _model_summary_str(model))
     
     return model
 
@@ -232,14 +243,14 @@ def point_net_no_pool(num_points: int, num_classes: int, units: int = 32, dims: 
     x = conv_bn(x, units*16)
     x = layers.Flatten()(x)
     x = dense_bn(x, units*8)
-    x = layers.Dropout(0.3)(x)
+    x = layers.Dropout(ntpn_constants.DROPOUT_RATE)(x)
     x = dense_bn(x, units*4)
-    x = layers.Dropout(0.3)(x)
+    x = layers.Dropout(ntpn_constants.DROPOUT_RATE)(x)
     
     outputs = layers.Dense(num_classes, activation="softmax")(x)
     
     model = keras.Model(inputs=inputs, outputs=outputs, name='pointnetnopool')
-    model.summary()
+    logger.debug("Model summary for %s:\n%s", model.name, _model_summary_str(model))
     
     return model
 
@@ -261,14 +272,14 @@ def point_net_no_pool_no_transform(num_points: int, num_classes: int, units: int
     #x = layers.RNN(cell)(x)
     
     x = dense_bn(x, units*8)
-    x = layers.Dropout(0.3)(x)
+    x = layers.Dropout(ntpn_constants.DROPOUT_RATE)(x)
     x = dense_bn(x, units*4)
-    x = layers.Dropout(0.3)(x)
+    x = layers.Dropout(ntpn_constants.DROPOUT_RATE)(x)
     
     outputs = layers.Dense(num_classes, activation="softmax")(x)
     
     model = keras.Model(inputs=inputs, outputs=outputs, name='pointnetnopoolnotransform')
-    model.summary()
+    logger.debug("Model summary for %s:\n%s", model.name, _model_summary_str(model))
     
     return model
 
@@ -308,7 +319,7 @@ def point_net_segment(num_points: int, num_classes: int, units: int = 32, dims: 
     outputs = layers.Conv1D(num_classes, kernel_size=1, activation='softmax', name='segmentation_head')(segment_1)
         
     model = keras.Model(inputs=inputs, outputs=outputs, name='pointnetsegment')
-    model.summary()
+    logger.debug("Model summary for %s:\n%s", model.name, _model_summary_str(model))
     
     return model
 
