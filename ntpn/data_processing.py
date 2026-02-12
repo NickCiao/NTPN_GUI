@@ -136,8 +136,8 @@ def subsample_dataset_3d_within(stbin_list, labels_list, sample_size=32, replace
         out = subsample_neurons_3d(stbin_list[i], sample_size, replace)
         out_list.append(out)
 
-        out_neurons = np.concatenate(out_list)
-        out_labels = np.concatenate(labels_list)
+    out_neurons = np.concatenate(out_list)
+    out_labels = np.concatenate(labels_list)
 
     return out_neurons, out_labels
 

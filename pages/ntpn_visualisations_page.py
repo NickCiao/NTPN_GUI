@@ -21,7 +21,7 @@ def generate_sets():
     st.sidebar.write('Generate Critical Sets and Upper-bounds')
 
     # main section
-    if not state.model.train_tensors and state.model.test_tensors and state.model.ntpn_model:
+    if not state.model.train_tensors or not state.model.test_tensors or not state.model.ntpn_model:
         st.warning('Ensure Training and Test Sets, and a NTPN Model are Defined')
 
     cs_tab, ub_tab = st.tabs(['Critical Sets', 'Upper-bounds'])
@@ -117,7 +117,7 @@ def ntpn_visualisations_main():
         plotting()
 
     # Main section
-    if not state.model.train_tensors and state.model.test_tensors and state.model.ntpn_model:
+    if not state.model.train_tensors or not state.model.test_tensors or not state.model.ntpn_model:
         st.warning('Ensure Training and Test Sets, and a NTPN Model are Defined')
 
     return

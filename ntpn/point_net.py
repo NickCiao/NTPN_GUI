@@ -229,7 +229,7 @@ def point_net_no_pool(num_points: int, num_classes: int, units: int = 32, dims: 
     inputs = keras.Input(shape=(num_points, dims))
 
     x = tnet(inputs, dims, units)
-    x = conv_bn(inputs, units)
+    x = conv_bn(x, units)
     x = conv_bn(x, units)
     x = tnet(x, units, units)
     x = conv_bn(x, units)

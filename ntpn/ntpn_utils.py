@@ -89,7 +89,7 @@ def train_for_streamlit(epochs: int, state: StateManager | None = None) -> None:
             # number of steps to log
             if step % 1 == 0:
                 step_acc = float(state.model.train_metric.result())
-                percent_complete = step / (len(state.data.sub_samples) // state.model.batch_size)
+                percent_complete = step / max(1, len(state.data.sub_samples) // state.model.batch_size)
                 progress_bar.progress(percent_complete)
                 st_t.write(f'Duration : {epoch_time:.2f}s, Training Acc : {float(step_acc):.4f}')
 
@@ -100,14 +100,14 @@ def train_for_streamlit(epochs: int, state: StateManager | None = None) -> None:
         # reset training metric at the end of each epoch
         state.model.train_metric.reset_state()
 
-        train_loss = round((sum(train_loss_list) / len(train_loss_list)), 5)
+        train_loss = round((sum(train_loss_list) / len(train_loss_list)), 5) if train_loss_list else 0.0
 
         val_loss_list = []
         # run the validation loop
         for x_batch_val, y_batch_val in state.model.test_tensors:
             val_loss_list.append(float(test_step(x_batch_val, y_batch_val, state=state)))
 
-        val_loss = round((sum(val_loss_list) / len(val_loss_list)), 5)
+        val_loss = round((sum(val_loss_list) / len(val_loss_list)), 5) if val_loss_list else 0.0
 
         val_acc = state.model.test_metric.result()
         state.model.test_metric.reset_state()

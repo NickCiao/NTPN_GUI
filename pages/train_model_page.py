@@ -35,11 +35,13 @@ def define_model():
     define_model_layer_width = define_model_form.number_input(
         label='Layer Width', min_value=8, max_value=64, value=ntpn_constants.DEFAULT_LAYER_WIDTH
     )
+    default_dim = state.data.sub_samples.shape[2] if state.data.sub_samples is not None else ntpn_constants.DEFAULT_NUM_NEURONS
     define_model_trajectory_dimension = define_model_form.number_input(
-        label='Trajectory Dimension (Neurons)', min_value=1, max_value=100, value=(state.data.sub_samples.shape)[2]
+        label='Trajectory Dimension (Neurons)', min_value=1, max_value=100, value=default_dim
     )
+    default_classes = len(np.unique(state.data.sub_labels)) if state.data.sub_labels is not None else 2
     define_model_number_classes = define_model_form.number_input(
-        label='Number of Classes', min_value=1, max_value=100, value=len(np.unique(state.data.sub_labels))
+        label='Number of Classes', min_value=1, max_value=100, value=default_classes
     )
 
     define_model_submit = define_model_form.form_submit_button(label='Create Model')
@@ -63,7 +65,7 @@ def define_model():
     return
 
 
-def train_model():
+def train_model_ui():
     # Get state manager
     state = get_state_manager()
 
@@ -120,7 +122,7 @@ def train_model_main():
     if sd_mode_select == 'Create Model':
         define_model()
     elif sd_mode_select == 'Train Model':
-        train_model()
+        train_model_ui()
 
     return
 
