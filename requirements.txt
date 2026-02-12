@@ -1,0 +1,18 @@
+# Core dependencies
+streamlit>=1.31.0
+tensorflow>=2.15.0
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Scientific computing
+scipy>=1.11.0
+scikit-learn>=1.3.0
+scikit-image>=0.22.0
+
+# Visualization
+matplotlib>=3.7.0
+Pillow>=10.0.0
+
+# Dimensionality reduction and TDA
+umap-learn>=0.5.5
+# giotto-tda==0.1.4  # Commented out due to complex build requirements in Docker

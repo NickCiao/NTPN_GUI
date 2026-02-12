@@ -15,7 +15,36 @@ import pickle
 import tensorflow as tf
 from sklearn.preprocessing import power_transform
 from sklearn.preprocessing import StandardScaler
-from gtda.time_series import SlidingWindow
+try:
+    from gtda.time_series import SlidingWindow
+except ImportError:
+    # Simple SlidingWindow replacement if giotto-tda is not available
+    class SlidingWindow:
+        def __init__(self, size=3, stride=1):
+            self.size = size
+            self.stride = stride
+
+        def fit_transform_resample(self, X, y=None):
+            """Create sliding windows from time series data."""
+            X = np.array(X)
+            if y is not None:
+                y = np.array(y)
+
+            # Transpose if needed (neurons, time) -> (time, neurons)
+            if X.ndim == 2 and X.shape[0] < X.shape[1]:
+                X = X.T
+
+            n_samples = (X.shape[0] - self.size) // self.stride + 1
+            windows = np.array([X[i*self.stride:i*self.stride + self.size]
+                              for i in range(n_samples)])
+
+            if y is not None:
+                # Take the last label in each window
+                y_windows = np.array([y[i*self.stride + self.size - 1]
+                                     for i in range(n_samples)])
+                return windows, y_windows
+            return windows
+
 from sklearn.model_selection import train_test_split
 
 import umap
