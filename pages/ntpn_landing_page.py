@@ -10,7 +10,7 @@ import streamlit as st
 import numpy as np
 
 from ntpn import ntpn_utils
-from ntpn import point_net_utils
+from ntpn import plotting
 
 
 
@@ -23,7 +23,7 @@ def ntpn_landing_main():
     st.markdown("### Neural Trajectory Point Net")
     st.markdown('---')
     # Front Page Image
-    title_image = point_net_utils.load_image('images/ntpn_flowchart_captioned.png')
+    title_image = plotting.load_image('images/ntpn_flowchart_captioned.png')
     ntpn_utils.draw_image(title_image,'','')
     
     st.markdown('---')

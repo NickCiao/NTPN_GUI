@@ -26,8 +26,8 @@ class TestGenerateCriticalSets:
     """Tests for generate_critical_sets."""
 
     @patch('ntpn.visualization_service.point_net')
-    @patch('ntpn.visualization_service.point_net_utils')
-    def test_generates_critical_sets(self, mock_utils, mock_pn, state):
+    @patch('ntpn.visualization_service.data_processing')
+    def test_generates_critical_sets(self, mock_dp, mock_pn, state):
         """Critical sets are generated and stored for each class."""
         num_classes = 2
         num_samples = 10
@@ -37,7 +37,7 @@ class TestGenerateCriticalSets:
         state.model.ntpn_model = MagicMock()
 
         mock_trajectories = np.random.randn(num_samples, 11, 32).astype(np.float32)
-        mock_utils.select_samples.return_value = mock_trajectories
+        mock_dp.select_samples.return_value = mock_trajectories
         mock_pn.predict_critical.return_value = np.random.randn(num_samples, 11, 32).astype(np.float32)
         mock_pn.generate_critical.return_value = (
             np.random.randn(num_samples, 11, 32).astype(np.float32),
@@ -54,14 +54,14 @@ class TestGenerateCriticalSets:
         assert state.viz.cs_means is not None
 
     @patch('ntpn.visualization_service.point_net')
-    @patch('ntpn.visualization_service.point_net_utils')
-    def test_uses_activation_14_layer(self, mock_utils, mock_pn, state):
+    @patch('ntpn.visualization_service.data_processing')
+    def test_uses_activation_14_layer(self, mock_dp, mock_pn, state):
         """predict_critical is called with layer_name='activation_14'."""
         state.data.sub_samples = np.random.randn(50, 11, 32).astype(np.float32)
         state.data.sub_labels = np.zeros(50).astype(np.int32)
         state.model.ntpn_model = MagicMock()
 
-        mock_utils.select_samples.return_value = np.random.randn(10, 11, 32)
+        mock_dp.select_samples.return_value = np.random.randn(10, 11, 32)
         mock_pn.predict_critical.return_value = np.random.randn(10, 11, 32)
         mock_pn.generate_critical.return_value = (np.random.randn(10, 11, 32), 5.0)
 
@@ -75,8 +75,9 @@ class TestGenerateCriticalSets:
 class TestCsDownsamplePCA:
     """Tests for cs_downsample_PCA."""
 
-    @patch('ntpn.visualization_service.point_net_utils')
-    def test_returns_downsampled_cs_and_trajectories(self, mock_utils, state):
+    @patch('ntpn.visualization_service.data_processing')
+    @patch('ntpn.visualization_service.analysis')
+    def test_returns_downsampled_cs_and_trajectories(self, mock_analysis, mock_dp, state):
         """PCA downsampling returns cs and trajectory arrays."""
         n_samples = 10
         state.viz.cs_lists = [np.random.randn(n_samples, 32, 20)]
@@ -84,11 +85,11 @@ class TestCsDownsamplePCA:
 
         pca_cs = np.random.randn(n_samples, 32, 3)
         pca_trajs = np.random.randn(n_samples, 32, 3)
-        mock_utils.pca_cs_windowed.return_value = (pca_cs, pca_trajs)
+        mock_analysis.pca_cs_windowed.return_value = (pca_cs, pca_trajs)
 
         selected_cs = np.random.randn(5, 32, 3)
         selected_trajs = np.random.randn(5, 32, 3)
-        mock_utils.select_samples_cs.return_value = (selected_cs, selected_trajs)
+        mock_dp.select_samples_cs.return_value = (selected_cs, selected_trajs)
 
         from ntpn.visualization_service import cs_downsample_PCA
         result_cs, result_trajs = cs_downsample_PCA(0, 5, dims=3, state=state)

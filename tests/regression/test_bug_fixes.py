@@ -40,7 +40,7 @@ class TestBugFix1SessionStateTyop:
         assert has_state_manager or has_correct_session_state, \
             "Correct usage not found: should use StateManager (state.data.*) or st.session_state.*"
 
-    @patch('ntpn.data_service.point_net_utils')
+    @patch('ntpn.data_service.data_processing')
     def test_samples_transform_power_calls_with_session_state(self, mock_utils):
         """Test that Power transform uses StateManager correctly."""
         import streamlit as st
@@ -69,7 +69,7 @@ class TestBugFix1SessionStateTyop:
             test_indices
         )
 
-    @patch('ntpn.data_service.point_net_utils')
+    @patch('ntpn.data_service.data_processing')
     def test_samples_transform_standard_calls_with_session_state(self, mock_utils):
         """Test that Standard transform uses StateManager correctly."""
         import streamlit as st
@@ -150,16 +150,107 @@ class TestBugFix2LogicError:
         assert not old_buggy_logic("exists", None), "Bug: Didn't warn when test missing!"
 
 
+class TestBugFix3DeprecatedOutputKwarg:
+    """
+    Bug Fix #3: point_net.py line 343
+
+    Issue: Used deprecated `output=` kwarg instead of `outputs=` in keras.Model()
+    Fixed: 2026-02-12
+    """
+
+    def test_predict_upper_uses_outputs_kwarg(self):
+        """Verify predict_upper uses 'outputs=' (plural) in keras.Model()."""
+        source_file = Path('ntpn/point_net.py')
+        content = source_file.read_text()
+
+        assert 'keras.Model(inputs=model.inputs, output=' not in content, \
+            "Bug reappeared: should use outputs= (plural) not output="
+
+        assert 'keras.Model(inputs=model.inputs, outputs=layer.output)' in content, \
+            "Expected correct outputs= kwarg in predict_upper"
+
+    def test_all_keras_model_calls_use_outputs(self):
+        """Verify no keras.Model calls use deprecated output= kwarg."""
+        import re
+        source_file = Path('ntpn/point_net.py')
+        content = source_file.read_text()
+
+        # Find all keras.Model() calls and check none use singular output=
+        # Match 'keras.Model(' with 'output=' but not 'outputs='
+        deprecated_pattern = re.compile(r'keras\.Model\([^)]*\boutput\b\s*=(?!=)')
+        matches = deprecated_pattern.findall(content)
+
+        assert len(matches) == 0, \
+            f"Found deprecated output= kwarg in keras.Model calls: {matches}"
+
+
+class TestBugFix4UnitSphereReshape:
+    """
+    Bug Fix #4: data_processing.py unit_sphere()
+
+    Issue: 16^3 = 4096 points reshaped to (512, 32, 3) = 16384 — ValueError
+    Fixed: 2026-02-12
+    """
+
+    def test_unit_sphere_does_not_raise(self):
+        from ntpn.data_processing import unit_sphere
+        result = unit_sphere()
+        assert result.shape == (128, 32, 3)
+
+
+class TestBugFix5NpDeleteAssignment:
+    """
+    Bug Fix #5: analysis.py generate_uniques_from_trajectories() line 199
+
+    Issue: np.delete() result not assigned back, causing infinite loop
+    Fixed: 2026-02-12
+    """
+
+    def test_no_infinite_loop(self):
+        """Verify the function completes (doesn't hang) when dummy values are present."""
+        import numpy as np
+        from ntpn.analysis import generate_uniques_from_trajectories
+
+        exemplar = np.random.randn(8, 3).astype(np.float32)
+        # Create trajectories with a dummy value (10) that should be deleted
+        trajectories = np.random.randn(3, 8, 3).astype(np.float32)
+        trajectories[0, :, :] = 10.0  # dummy row
+
+        point_set, all_points = generate_uniques_from_trajectories(
+            exemplar, trajectories, mode='fixed', threshold=0.0
+        )
+        # Should complete without hanging and return results
+        assert isinstance(point_set, list)
+
+
+class TestBugFix6TfTileKeras3:
+    """
+    Bug Fix #6: point_net.py point_net_segment()
+
+    Issue: tf.tile() incompatible with Keras 3 KerasTensor
+    Fixed: 2026-02-12 — replaced with layers.UpSampling1D()
+    """
+
+    def test_point_net_segment_builds(self):
+        from ntpn.point_net import point_net_segment
+        model = point_net_segment(num_points=8, num_classes=2, units=4, dims=3)
+        assert model.output_shape == (None, 8, 2)
+
+    def test_no_tf_tile_in_source(self):
+        source = Path('ntpn/point_net.py').read_text()
+        assert 'tf.tile(' not in source, "Bug reappeared: should use UpSampling1D, not tf.tile"
+
+
 @pytest.mark.regression
 def test_all_critical_bugs_fixed():
     """Meta-test: Verify all documented critical bugs are fixed."""
-    import ntpn.ntpn_utils as ntpn_utils
     from pathlib import Path
 
-    # Read source files (Bug #1 logic now in data_service.py after service extraction)
+    # Read source files
     data_service_source = Path('ntpn/data_service.py').read_text()
     ntpn_utils_source = Path('ntpn/ntpn_utils.py').read_text()
     train_page_source = Path('pages/train_model_page.py').read_text()
+    point_net_source = Path('ntpn/point_net.py').read_text()
 
     # Check Bug #1 is fixed (check both files)
     assert 'st.session.select_indices' not in data_service_source
@@ -168,4 +259,12 @@ def test_all_critical_bugs_fixed():
     # Check Bug #2 is fixed
     assert 'if not st.session_state.train_tensors and st.session_state.test_tensors:' not in train_page_source
 
-    print("✓ All critical bugs verified as fixed")
+    # Check Bug #3 is fixed (deprecated output= kwarg)
+    import re
+    deprecated_pattern = re.compile(r'keras\.Model\([^)]*\boutput\b\s*=(?!=)')
+    assert not deprecated_pattern.search(point_net_source), \
+        "Bug #3 reappeared: deprecated output= kwarg in point_net.py"
+
+    # Check Bug #6 is fixed (tf.tile -> keras.ops.tile)
+    assert 'tf.tile(' not in point_net_source, \
+        "Bug #6 reappeared: tf.tile should be keras.ops.tile"

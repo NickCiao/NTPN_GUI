@@ -8,19 +8,16 @@ only when a state parameter is provided.
 @author: proxy_loken
 """
 
-from typing import List, Tuple, Optional, Any
 import numpy as np
-import numpy.typing as npt
 
-from ntpn import point_net_utils
-from ntpn import ntpn_constants
+from ntpn import data_processing, ntpn_constants
 from ntpn.logging_config import get_logger
 from ntpn.state_manager import StateManager, get_state_manager
 
 logger = get_logger(__name__)
 
 
-def load_demo_session(state: Optional[StateManager] = None) -> None:
+def load_demo_session(state: StateManager | None = None) -> None:
     """Load demo dataset and labels.
 
     Args:
@@ -32,19 +29,17 @@ def load_demo_session(state: Optional[StateManager] = None) -> None:
     st_file = ntpn_constants.demo_st_file
     context_file = ntpn_constants.demo_context_file
 
-    logger.info("Loading demo session from %s and %s", st_file, context_file)
-    stbin_list, context_list = point_net_utils.load_data_pickle(
-        st_file, context_file, 'context_labels'
-    )
+    logger.info('Loading demo session from %s and %s', st_file, context_file)
+    stbin_list, context_list = data_processing.load_data_pickle(st_file, context_file, 'context_labels')
 
     state.data.dataset = stbin_list
     state.data.labels = context_list
-    state.data.dataset_name = "demo_data"
+    state.data.dataset_name = 'demo_data'
 
     state.sync_to_legacy()
 
 
-def load_2D_data(state: Optional[StateManager] = None) -> None:
+def load_2D_data(state: StateManager | None = None) -> None:
     """Load 2D data (stub function - not implemented).
 
     Args:
@@ -54,7 +49,7 @@ def load_2D_data(state: Optional[StateManager] = None) -> None:
         state = get_state_manager()
 
 
-def load_3D_data(state: Optional[StateManager] = None) -> None:
+def load_3D_data(state: StateManager | None = None) -> None:
     """Load 3D trajectory data (stub function - not implemented).
 
     Args:
@@ -65,9 +60,9 @@ def load_3D_data(state: Optional[StateManager] = None) -> None:
 
 
 def session_select(
-    sessions: List[int],
+    sessions: list[int],
     trim_noise: bool,
-    state: Optional[StateManager] = None,
+    state: StateManager | None = None,
 ) -> None:
     """Select sessions from dataset and optionally trim noise.
 
@@ -79,15 +74,13 @@ def session_select(
     if state is None:
         state = get_state_manager()
 
-    logger.info("Selecting sessions %s, trim_noise=%s", sessions, trim_noise)
+    logger.info('Selecting sessions %s, trim_noise=%s', sessions, trim_noise)
     select_samples = [state.data.dataset[i] for i in sessions]
     select_labels = [state.data.labels[i] for i in sessions]
     select_indices = [(idx) for idx, item in enumerate(select_samples)]
 
     if trim_noise:
-        select_samples, select_labels = point_net_utils.remove_noise_cat(
-            select_samples, select_labels, select_indices
-        )
+        select_samples, select_labels = data_processing.remove_noise_cat(select_samples, select_labels, select_indices)
 
     state.data.select_samples = select_samples
     state.data.select_labels = select_labels
@@ -98,7 +91,7 @@ def session_select(
 
 def samples_transform(
     transform_radio: str,
-    state: Optional[StateManager] = None,
+    state: StateManager | None = None,
 ) -> None:
     """Apply transformation to selected samples.
 
@@ -109,15 +102,11 @@ def samples_transform(
     if state is None:
         state = get_state_manager()
 
-    logger.info("Applying transform: %s", transform_radio)
+    logger.info('Applying transform: %s', transform_radio)
     if transform_radio == 'Power':
-        X_tsf = point_net_utils.pow_transform(
-            state.data.select_samples, state.data.select_indices
-        )
+        X_tsf = data_processing.pow_transform(state.data.select_samples, state.data.select_indices)
     elif transform_radio == 'Standard':
-        X_tsf = point_net_utils.std_transform(
-            state.data.select_samples, state.data.select_indices
-        )
+        X_tsf = data_processing.std_transform(state.data.select_samples, state.data.select_indices)
     else:
         X_tsf = state.data.select_samples
 
@@ -130,7 +119,7 @@ def create_trajectories(
     trajectories_window_size: int,
     trajectories_window_stride: int,
     trajectories_num_neurons: int,
-    state: Optional[StateManager] = None,
+    state: StateManager | None = None,
 ) -> None:
     """Create neural trajectories using sliding windows and neuron subsampling.
 
@@ -143,18 +132,22 @@ def create_trajectories(
     if state is None:
         state = get_state_manager()
 
-    logger.info("Creating trajectories: window_size=%d, stride=%d, neurons=%d",
-                trajectories_window_size, trajectories_window_stride, trajectories_num_neurons)
+    logger.info(
+        'Creating trajectories: window_size=%d, stride=%d, neurons=%d',
+        trajectories_window_size,
+        trajectories_window_stride,
+        trajectories_num_neurons,
+    )
     tsf_samples = state.data.tsf_samples
 
-    X_sw_list, Y_sw_list = point_net_utils.window_projection(
+    X_sw_list, Y_sw_list = data_processing.window_projection(
         tsf_samples,
         state.data.select_labels,
         state.data.select_indices,
         window_size=trajectories_window_size,
         stride=trajectories_window_stride,
     )
-    X_subs, Ys = point_net_utils.subsample_dataset_3d_within(
+    X_subs, Ys = data_processing.subsample_dataset_3d_within(
         X_sw_list, Y_sw_list, trajectories_num_neurons, replace=False
     )
     X_subs = np.swapaxes(X_subs, 1, 2)
@@ -167,7 +160,7 @@ def create_trajectories(
 
 def create_train_test(
     test_size: float,
-    state: Optional[StateManager] = None,
+    state: StateManager | None = None,
 ) -> None:
     """Create train/test split from subsampled data.
 
@@ -178,13 +171,11 @@ def create_train_test(
     if state is None:
         state = get_state_manager()
 
-    logger.info("Creating train/test split with test_size=%.2f", test_size)
-    X_train, X_val, Y_train, Y_val = point_net_utils.train_test_gen(
+    logger.info('Creating train/test split with test_size=%.2f', test_size)
+    X_train, X_val, Y_train, Y_val = data_processing.train_test_gen(
         state.data.sub_samples, state.data.sub_labels, test_size=test_size
     )
-    train_dataset, test_dataset = point_net_utils.train_test_tensors(
-        X_train, X_val, Y_train, Y_val, augment=False
-    )
+    train_dataset, test_dataset = data_processing.train_test_tensors(X_train, X_val, Y_train, Y_val, augment=False)
 
     state.model.train_tensors = train_dataset
     state.model.test_tensors = test_dataset

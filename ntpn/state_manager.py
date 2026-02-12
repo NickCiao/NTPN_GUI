@@ -20,10 +20,10 @@ Usage:
 """
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Any
-import streamlit as st
-import numpy as np
+from typing import Any
+
 import numpy.typing as npt
+import streamlit as st
 from tensorflow import keras
 
 from ntpn import ntpn_constants
@@ -34,24 +34,24 @@ class DataState:
     """State for data loading and preprocessing."""
 
     # Dataset identification
-    dataset_name: str = "demo_data"
+    dataset_name: str = 'demo_data'
 
     # Raw data
-    dataset: Optional[List[npt.NDArray]] = None
-    labels: Optional[List[npt.NDArray]] = None
+    dataset: list[npt.NDArray] | None = None
+    labels: list[npt.NDArray] | None = None
 
     # Session selection
-    select_samples: Optional[List[npt.NDArray]] = None
-    select_indices: Optional[List[int]] = None
-    select_labels: Optional[List[npt.NDArray]] = None
+    select_samples: list[npt.NDArray] | None = None
+    select_indices: list[int] | None = None
+    select_labels: list[npt.NDArray] | None = None
 
     # Transformed samples (intermediate between transform and trajectory creation)
-    tsf_samples: Optional[List[npt.NDArray]] = None
+    tsf_samples: list[npt.NDArray] | None = None
 
     # Subsampled data
-    sub_samples: Optional[List[npt.NDArray]] = None
-    sub_indices: Optional[List[int]] = None
-    sub_labels: Optional[List[npt.NDArray]] = None
+    sub_samples: list[npt.NDArray] | None = None
+    sub_indices: list[int] | None = None
+    sub_labels: list[npt.NDArray] | None = None
 
     def is_loaded(self) -> bool:
         """Check if raw data is loaded."""
@@ -75,28 +75,28 @@ class ModelState:
     """State for model configuration and training."""
 
     # Model
-    ntpn_model: Optional[keras.Model] = None
-    model_name: str = "No model loaded"
+    ntpn_model: keras.Model | None = None
+    model_name: str = 'No model loaded'
 
     # Training data
-    train_tensors: Optional[Any] = None
-    test_tensors: Optional[Any] = None
+    train_tensors: Any | None = None
+    test_tensors: Any | None = None
 
     # Training configuration
     batch_size: int = ntpn_constants.DEFAULT_BATCH_SIZE
     learning_rate: float = ntpn_constants.DEFAULT_LEARNING_RATE
 
     # Training infrastructure (Keras objects for Streamlit training loop)
-    loss_fn: Optional[Any] = None
-    optimizer: Optional[Any] = None
-    train_metric: Optional[Any] = None
-    test_metric: Optional[Any] = None
+    loss_fn: Any | None = None
+    optimizer: Any | None = None
+    train_metric: Any | None = None
+    test_metric: Any | None = None
 
     # Training metrics
-    train_loss: List[float] = field(default_factory=list)
-    train_accuracy: List[float] = field(default_factory=list)
-    test_loss: List[float] = field(default_factory=list)
-    test_accuracy: List[float] = field(default_factory=list)
+    train_loss: list[float] = field(default_factory=list)
+    train_accuracy: list[float] = field(default_factory=list)
+    test_loss: list[float] = field(default_factory=list)
+    test_accuracy: list[float] = field(default_factory=list)
 
     def has_model(self) -> bool:
         """Check if model is created."""
@@ -112,8 +112,12 @@ class ModelState:
 
     def has_training_infrastructure(self) -> bool:
         """Check if training infrastructure (loss, optimizer, metrics) is set up."""
-        return (self.loss_fn is not None and self.optimizer is not None and
-                self.train_metric is not None and self.test_metric is not None)
+        return (
+            self.loss_fn is not None
+            and self.optimizer is not None
+            and self.train_metric is not None
+            and self.test_metric is not None
+        )
 
 
 @dataclass
@@ -121,21 +125,21 @@ class VisualizationState:
     """State for critical sets and visualizations."""
 
     # Critical sets
-    cs_lists: Optional[List] = None
-    cs_pca: Optional[List] = None
-    cs_umap: Optional[List] = None
-    cs_cca_aligned: Optional[List] = None
+    cs_lists: list | None = None
+    cs_pca: list | None = None
+    cs_umap: list | None = None
+    cs_cca_aligned: list | None = None
 
     # Critical set intermediates
-    cs_trajectories: Optional[List] = None
-    cs_predictions: Optional[List] = None
-    cs_means: Optional[List] = None
+    cs_trajectories: list | None = None
+    cs_predictions: list | None = None
+    cs_means: list | None = None
 
     # Plot outputs
-    cs_ub_plots: Optional[List] = None
+    cs_ub_plots: list | None = None
 
     # Upper bounds
-    upper_lists: Optional[List] = None
+    upper_lists: list | None = None
 
     # Visualization parameters
     num_critical_samples: int = 50
@@ -149,9 +153,7 @@ class VisualizationState:
 
     def has_cs_intermediates(self) -> bool:
         """Check if critical set intermediates are available."""
-        return (self.cs_trajectories is not None and
-                self.cs_predictions is not None and
-                self.cs_means is not None)
+        return self.cs_trajectories is not None and self.cs_predictions is not None and self.cs_means is not None
 
     def has_plots(self) -> bool:
         """Check if plot outputs are available."""
@@ -163,7 +165,7 @@ class UIState:
     """State for UI configuration and user interactions."""
 
     # Current page/view
-    current_page: str = "import_and_load"
+    current_page: str = 'import_and_load'
 
     # UI flags
     show_advanced_options: bool = False
@@ -171,7 +173,7 @@ class UIState:
 
     # Progress tracking
     operation_in_progress: bool = False
-    progress_message: str = ""
+    progress_message: str = ''
 
 
 class StateManager:
@@ -234,9 +236,7 @@ class StateManager:
 
     def validate_can_generate_critical_sets(self) -> bool:
         """Validate that critical sets can be generated."""
-        return (self.model.has_model() and
-                self.data.is_subsampled() and
-                self.model.has_training_data())
+        return self.model.has_model() and self.data.is_subsampled() and self.model.has_training_data()
 
     # Migration helpers (for backward compatibility)
 
@@ -438,7 +438,7 @@ class StateManager:
             'ui': {
                 'current_page': self.ui.current_page,
                 'debug_mode': self.ui.debug_mode,
-            }
+            },
         }
 
     def reset_state(self, keep_data: bool = False) -> None:
@@ -456,9 +456,7 @@ class StateManager:
 
             # Reset states
             st.session_state['_data_state'] = DataState(
-                dataset=saved_dataset,
-                labels=saved_labels,
-                dataset_name=saved_name
+                dataset=saved_dataset, labels=saved_labels, dataset_name=saved_name
             )
         else:
             st.session_state['_data_state'] = DataState()
@@ -470,11 +468,11 @@ class StateManager:
     def __repr__(self) -> str:
         """String representation for debugging."""
         summary = self.get_state_summary()
-        return f"StateManager(data_loaded={summary['data']['loaded']}, model_ready={summary['model']['can_train']})"
+        return f'StateManager(data_loaded={summary["data"]["loaded"]}, model_ready={summary["model"]["can_train"]})'
 
 
 # Singleton instance for easy import
-_state_manager_instance: Optional[StateManager] = None
+_state_manager_instance: StateManager | None = None
 
 
 def get_state_manager() -> StateManager:

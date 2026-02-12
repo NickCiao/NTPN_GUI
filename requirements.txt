@@ -30,5 +30,8 @@ pytest-cov>=4.1.0
 pytest-mock>=3.12.0
 pytest-timeout>=2.2.0
 
+# Linting and formatting
+ruff>=0.4.0
+
 # Type checking
 mypy>=1.8.0

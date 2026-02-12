@@ -13,7 +13,6 @@ Usage:
 """
 
 import logging
-from typing import Optional
 
 # Root namespace for all NTPN loggers
 _NAMESPACE = 'ntpn'
@@ -24,8 +23,8 @@ _initialized = False
 
 def setup_logging(
     level: int = logging.INFO,
-    format_string: Optional[str] = None,
-    log_file: Optional[str] = None,
+    format_string: str | None = None,
+    log_file: str | None = None,
 ) -> None:
     """Configure logging for the NTPN application.
 

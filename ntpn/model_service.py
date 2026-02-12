@@ -7,12 +7,12 @@ with no Streamlit dependency.
 @author: proxy_loken
 """
 
-from typing import Optional, Any
+from typing import Any
+
 import tensorflow as tf
 from tensorflow import keras
 
-from ntpn import point_net
-from ntpn import ntpn_constants
+from ntpn import ntpn_constants, point_net
 from ntpn.logging_config import get_logger
 from ntpn.state_manager import StateManager, get_state_manager
 
@@ -24,7 +24,7 @@ def create_model(
     num_classes: int,
     layer_width: int,
     trajectory_dim: int,
-    state: Optional[StateManager] = None,
+    state: StateManager | None = None,
 ) -> None:
     """Create a PointNet model.
 
@@ -38,11 +38,14 @@ def create_model(
     if state is None:
         state = get_state_manager()
 
-    logger.info("Creating PointNet model: trajectory_length=%d, num_classes=%d, layer_width=%d, dims=%d",
-                trajectory_length, num_classes, layer_width, trajectory_dim)
-    state.model.ntpn_model = point_net.point_net(
-        trajectory_length, num_classes, units=layer_width, dims=trajectory_dim
+    logger.info(
+        'Creating PointNet model: trajectory_length=%d, num_classes=%d, layer_width=%d, dims=%d',
+        trajectory_length,
+        num_classes,
+        layer_width,
+        trajectory_dim,
     )
+    state.model.ntpn_model = point_net.point_net(trajectory_length, num_classes, units=layer_width, dims=trajectory_dim)
 
     state.sync_to_legacy()
 
@@ -52,7 +55,7 @@ def compile_model(
     learning_rate: float = ntpn_constants.DEFAULT_LEARNING_RATE,
     metric: str = 'sparse_categorical_accuracy',
     view: bool = True,
-    state: Optional[StateManager] = None,
+    state: StateManager | None = None,
 ) -> None:
     """Compile the PointNet model.
 
@@ -66,7 +69,7 @@ def compile_model(
     if state is None:
         state = get_state_manager()
 
-    logger.info("Compiling model: loss=%s, lr=%f, metric=%s, view=%s", loss, learning_rate, metric, view)
+    logger.info('Compiling model: loss=%s, lr=%f, metric=%s, view=%s', loss, learning_rate, metric, view)
     state.model.learning_rate = learning_rate
 
     if view:
@@ -84,7 +87,7 @@ def compile_model(
     state.sync_to_legacy()
 
 
-def train_step(x: Any, y: Any, state: Optional[StateManager] = None) -> tf.Tensor:
+def train_step(x: Any, y: Any, state: StateManager | None = None) -> tf.Tensor:
     """Execute one training step.
 
     Args:
@@ -114,7 +117,7 @@ def train_step(x: Any, y: Any, state: Optional[StateManager] = None) -> tf.Tenso
     return loss_value
 
 
-def test_step(x: Any, y: Any, state: Optional[StateManager] = None) -> tf.Tensor:
+def test_step(x: Any, y: Any, state: StateManager | None = None) -> tf.Tensor:
     """Execute one test/validation step.
 
     Args:
@@ -135,7 +138,7 @@ def test_step(x: Any, y: Any, state: Optional[StateManager] = None) -> tf.Tensor
 
 def train_model_headless(
     epochs: int,
-    state: Optional[StateManager] = None,
+    state: StateManager | None = None,
 ) -> None:
     """Train the model without UI (standard Keras fit).
 
@@ -155,7 +158,7 @@ def train_model_headless(
 
 def save_model(
     model_name: str,
-    state: Optional[StateManager] = None,
+    state: StateManager | None = None,
 ) -> None:
     """Save the trained model to disk.
 
@@ -166,7 +169,7 @@ def save_model(
     if state is None:
         state = get_state_manager()
 
-    logger.info("Saving model as %s%s.keras", ntpn_constants.MODEL_SAVE_DIR, model_name)
+    logger.info('Saving model as %s%s.keras', ntpn_constants.MODEL_SAVE_DIR, model_name)
     state.model.ntpn_model.save(
         ntpn_constants.MODEL_SAVE_DIR + model_name + '.keras',
         overwrite=True,

@@ -7,13 +7,9 @@ and plotting functions with no Streamlit dependency.
 @author: proxy_loken
 """
 
-from typing import List, Tuple, Optional, Any
-import numpy as np
-import numpy.typing as npt
+from typing import Any
 
-from ntpn import point_net
-from ntpn import point_net_utils
-from ntpn import ntpn_constants
+from ntpn import analysis, data_processing, ntpn_constants, plotting, point_net
 from ntpn.logging_config import get_logger
 from ntpn.state_manager import StateManager, get_state_manager
 
@@ -23,7 +19,7 @@ logger = get_logger(__name__)
 def generate_critical_sets(
     num_classes: int,
     num_samples: int,
-    state: Optional[StateManager] = None,
+    state: StateManager | None = None,
 ) -> None:
     """Generate critical sets for each class.
 
@@ -35,13 +31,13 @@ def generate_critical_sets(
     if state is None:
         state = get_state_manager()
 
-    logger.info("Generating critical sets: %d classes, %d samples each", num_classes, num_samples)
+    logger.info('Generating critical sets: %d classes, %d samples each', num_classes, num_samples)
     cs_trajectories = []
     cs_predictions = []
     cs_lists = []
     cs_means = []
     for i in range(num_classes):
-        class_trajectories = point_net_utils.select_samples(
+        class_trajectories = data_processing.select_samples(
             state.data.sub_samples, state.data.sub_labels, num_samples, i
         )
         cs_trajectories.append(class_trajectories)
@@ -51,9 +47,7 @@ def generate_critical_sets(
             layer_name=ntpn_constants.CRITICAL_SET_LAYER_NAME,
         )
         cs_predictions.append(class_predictions)
-        class_cs, class_cs_mean = point_net.generate_critical(
-            class_predictions, num_samples, class_trajectories
-        )
+        class_cs, class_cs_mean = point_net.generate_critical(class_predictions, num_samples, class_trajectories)
         cs_lists.append(class_cs)
         cs_means.append(class_cs_mean)
 
@@ -69,8 +63,8 @@ def cs_downsample_PCA(
     label: int,
     num_examples: int,
     dims: int = 3,
-    state: Optional[StateManager] = None,
-) -> Tuple[Any, Any]:
+    state: StateManager | None = None,
+) -> tuple[Any, Any]:
     """Downsample critical sets using PCA.
 
     Args:
@@ -85,15 +79,13 @@ def cs_downsample_PCA(
     if state is None:
         state = get_state_manager()
 
-    pca_cs, pca_trajs = point_net_utils.pca_cs_windowed(
+    pca_cs, pca_trajs = analysis.pca_cs_windowed(
         state.viz.cs_lists[label],
         state.viz.cs_trajectories[label],
         dims=dims,
     )
 
-    pca_css, pca_trajss = point_net_utils.select_samples_cs(
-        pca_cs, pca_trajs, num_examples
-    )
+    pca_css, pca_trajss = data_processing.select_samples_cs(pca_cs, pca_trajs, num_examples)
 
     return pca_css, pca_trajss
 
@@ -102,8 +94,8 @@ def cs_downsample_UMAP(
     label: int,
     num_examples: int,
     dims: int = 3,
-    state: Optional[StateManager] = None,
-) -> Tuple[Any, Any]:
+    state: StateManager | None = None,
+) -> tuple[Any, Any]:
     """Downsample critical sets using UMAP.
 
     Args:
@@ -118,20 +110,18 @@ def cs_downsample_UMAP(
     if state is None:
         state = get_state_manager()
 
-    umap_cs, umap_trajs = point_net_utils.umap_cs_windowed(
+    umap_cs, umap_trajs = analysis.umap_cs_windowed(
         state.viz.cs_lists[label],
         state.viz.cs_trajectories[label],
         dims=dims,
     )
 
-    umap_css, umap_trajss = point_net_utils.select_samples_cs(
-        umap_cs, umap_trajs, num_examples
-    )
+    umap_css, umap_trajss = data_processing.select_samples_cs(umap_cs, umap_trajs, num_examples)
 
     return umap_css, umap_trajss
 
 
-def cs_CCA_alignment(state: Optional[StateManager] = None) -> None:
+def cs_CCA_alignment(state: StateManager | None = None) -> None:
     """Align critical sets using CCA (stub function).
 
     Args:
@@ -141,7 +131,7 @@ def cs_CCA_alignment(state: Optional[StateManager] = None) -> None:
         state = get_state_manager()
 
 
-def plot_trajectories_UMAP(state: Optional[StateManager] = None) -> None:
+def plot_trajectories_UMAP(state: StateManager | None = None) -> None:
     """Plot trajectories using UMAP (stub function).
 
     Args:
@@ -155,7 +145,7 @@ def plot_critical_sets_PCA(
     label: int,
     num_examples: int,
     dims: int = 3,
-    state: Optional[StateManager] = None,
+    state: StateManager | None = None,
 ) -> Any:
     """Plot critical sets using PCA.
 
@@ -171,11 +161,9 @@ def plot_critical_sets_PCA(
     if state is None:
         state = get_state_manager()
 
-    pca_css, pca_trajss = cs_downsample_PCA(
-        label, num_examples, dims=dims, state=state
-    )
+    pca_css, pca_trajss = cs_downsample_PCA(label, num_examples, dims=dims, state=state)
 
-    fig = point_net_utils.plot_critical(pca_css, num_examples, pca_trajss)
+    fig = plotting.plot_critical(pca_css, num_examples, pca_trajss)
 
     return fig
 
@@ -184,7 +172,7 @@ def plot_critical_sets_UMAP(
     label: int,
     num_examples: int,
     dims: int = 3,
-    state: Optional[StateManager] = None,
+    state: StateManager | None = None,
 ) -> Any:
     """Plot critical sets using UMAP.
 
@@ -200,16 +188,14 @@ def plot_critical_sets_UMAP(
     if state is None:
         state = get_state_manager()
 
-    umap_css, umap_trajss = cs_downsample_UMAP(
-        label, num_examples, dims=dims, state=state
-    )
+    umap_css, umap_trajss = cs_downsample_UMAP(label, num_examples, dims=dims, state=state)
 
-    fig = point_net_utils.plot_critical(umap_css, num_examples, umap_trajss)
+    fig = plotting.plot_critical(umap_css, num_examples, umap_trajss)
 
     return fig
 
 
-def plot_critical_sets_grid(state: Optional[StateManager] = None) -> None:
+def plot_critical_sets_grid(state: StateManager | None = None) -> None:
     """Plot critical sets in a grid (stub function).
 
     Args:
@@ -224,7 +210,7 @@ def draw_cs_plots(
     num_examples: int,
     dims: int,
     num_classes: int,
-    state: Optional[StateManager] = None,
+    state: StateManager | None = None,
 ) -> None:
     """Generate and draw critical set plots.
 

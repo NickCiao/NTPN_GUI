@@ -25,7 +25,7 @@ def state():
 class TestLoadDemoSession:
     """Tests for load_demo_session."""
 
-    @patch('ntpn.data_service.point_net_utils')
+    @patch('ntpn.data_service.data_processing')
     def test_loads_demo_data(self, mock_utils, state):
         """Demo data is loaded and stored in state."""
         mock_data = [np.random.randn(100, 20).astype(np.float32)]
@@ -39,7 +39,7 @@ class TestLoadDemoSession:
         assert state.data.labels is mock_labels
         assert state.data.dataset_name == "demo_data"
 
-    @patch('ntpn.data_service.point_net_utils')
+    @patch('ntpn.data_service.data_processing')
     def test_calls_load_data_with_constants(self, mock_utils, state):
         """load_demo_session uses file paths from ntpn_constants."""
         mock_utils.load_data_pickle.return_value = ([], [])
@@ -95,7 +95,7 @@ class TestSessionSelect:
         np.testing.assert_array_equal(state.data.select_samples[0], np.array([[1, 2], [3, 4]]))
         np.testing.assert_array_equal(state.data.select_samples[1], np.array([[9, 10], [11, 12]]))
 
-    @patch('ntpn.data_service.point_net_utils')
+    @patch('ntpn.data_service.data_processing')
     def test_trim_noise_calls_remove_noise_cat(self, mock_utils, state):
         """When trim_noise=True, calls remove_noise_cat."""
         state.data.dataset = [np.array([[1, 2]])]
@@ -111,7 +111,7 @@ class TestSessionSelect:
 class TestSamplesTransform:
     """Tests for samples_transform."""
 
-    @patch('ntpn.data_service.point_net_utils')
+    @patch('ntpn.data_service.data_processing')
     def test_power_transform(self, mock_utils, state):
         """Power transform is applied when selected."""
         test_samples = [np.array([[1, 2, 3]])]
@@ -141,7 +141,7 @@ class TestSamplesTransform:
 class TestCreateTrajectories:
     """Tests for create_trajectories."""
 
-    @patch('ntpn.data_service.point_net_utils')
+    @patch('ntpn.data_service.data_processing')
     def test_creates_trajectories(self, mock_utils, state):
         """Trajectories are created and stored."""
         state.data.tsf_samples = [np.random.randn(100, 20)]
@@ -166,7 +166,7 @@ class TestCreateTrajectories:
 class TestCreateTrainTest:
     """Tests for create_train_test."""
 
-    @patch('ntpn.data_service.point_net_utils')
+    @patch('ntpn.data_service.data_processing')
     def test_creates_train_test_split(self, mock_utils, state):
         """Train/test tensors are created and stored."""
         state.data.sub_samples = np.random.randn(50, 11, 32).astype(np.float32)
