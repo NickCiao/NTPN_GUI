@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Utilities for the NTPN Streamlit Application.
+Streamlit-specific utilities for the NTPN Application.
 
-This module is a thin facade that re-exports functions from the service layer
-for backward compatibility. Streamlit-specific functions remain here.
+This module contains only Streamlit-specific functions that cannot live
+in the service layer (which must remain Streamlit-free).
 
 @author: proxy_loken
 """
@@ -15,37 +15,12 @@ import numpy.typing as npt
 import streamlit as st
 
 from ntpn import ntpn_constants
+from ntpn.data_service import load_demo_session
 from ntpn.logging_config import get_logger
+from ntpn.model_service import test_step, train_step
 from ntpn.state_manager import StateManager, get_state_manager
 
 logger = get_logger(__name__)
-
-# Re-export from data_service (backward compatibility)
-from ntpn.data_service import create_train_test as create_train_test
-from ntpn.data_service import create_trajectories as create_trajectories
-from ntpn.data_service import load_2D_data as load_2D_data
-from ntpn.data_service import load_3D_data as load_3D_data
-from ntpn.data_service import load_demo_session as load_demo_session
-from ntpn.data_service import samples_transform as samples_transform
-from ntpn.data_service import session_select as session_select
-
-# Re-export from model_service (backward compatibility)
-from ntpn.model_service import compile_model as compile_model
-from ntpn.model_service import create_model as create_model
-from ntpn.model_service import save_model as save_model
-from ntpn.model_service import test_step as test_step
-from ntpn.model_service import train_step as train_step
-
-# Re-export from visualization_service (backward compatibility)
-from ntpn.visualization_service import cs_CCA_alignment as cs_CCA_alignment
-from ntpn.visualization_service import cs_downsample_PCA as cs_downsample_PCA
-from ntpn.visualization_service import cs_downsample_UMAP as cs_downsample_UMAP
-from ntpn.visualization_service import draw_cs_plots as draw_cs_plots
-from ntpn.visualization_service import generate_critical_sets as generate_critical_sets
-from ntpn.visualization_service import plot_critical_sets_grid as plot_critical_sets_grid
-from ntpn.visualization_service import plot_critical_sets_PCA as plot_critical_sets_PCA
-from ntpn.visualization_service import plot_critical_sets_UMAP as plot_critical_sets_UMAP
-from ntpn.visualization_service import plot_trajectories_UMAP as plot_trajectories_UMAP
 
 # STREAMLIT-SPECIFIC FUNCTIONS (remain in this module)
 

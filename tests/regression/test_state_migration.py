@@ -4,11 +4,7 @@ These tests ensure that all application code routes state through
 StateManager rather than directly accessing st.session_state.
 """
 
-import re
 from pathlib import Path
-
-import pytest
-
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
@@ -37,9 +33,8 @@ class TestNoSessionStateInAppCode:
         """ntpn_utils.py must not reference st.session_state."""
         filepath = PROJECT_ROOT / 'ntpn' / 'ntpn_utils.py'
         refs = _find_session_state_refs(filepath)
-        assert refs == [], (
-            f"Found {len(refs)} st.session_state ref(s) in ntpn_utils.py:\n"
-            + "\n".join(f"  L{n}: {l}" for n, l in refs)
+        assert refs == [], f'Found {len(refs)} st.session_state ref(s) in ntpn_utils.py:\n' + '\n'.join(
+            f'  L{n}: {l}' for n, l in refs
         )
 
     def test_page_files_no_session_state(self):
@@ -51,12 +46,8 @@ class TestNoSessionStateInAppCode:
             if refs:
                 all_refs[py_file.name] = refs
 
-        assert all_refs == {}, (
-            "Found st.session_state refs in page files:\n"
-            + "\n".join(
-                f"  {name}:\n" + "\n".join(f"    L{n}: {l}" for n, l in refs)
-                for name, refs in all_refs.items()
-            )
+        assert all_refs == {}, 'Found st.session_state refs in page files:\n' + '\n'.join(
+            f'  {name}:\n' + '\n'.join(f'    L{n}: {l}' for n, l in refs) for name, refs in all_refs.items()
         )
 
     def test_state_manager_is_sole_session_state_user(self):
@@ -70,10 +61,6 @@ class TestNoSessionStateInAppCode:
             if refs:
                 violations[py_file.name] = refs
 
-        assert violations == {}, (
-            "Found st.session_state refs outside state_manager.py:\n"
-            + "\n".join(
-                f"  {name}:\n" + "\n".join(f"    L{n}: {l}" for n, l in refs)
-                for name, refs in violations.items()
-            )
+        assert violations == {}, 'Found st.session_state refs outside state_manager.py:\n' + '\n'.join(
+            f'  {name}:\n' + '\n'.join(f'    L{n}: {l}' for n, l in refs) for name, refs in violations.items()
         )

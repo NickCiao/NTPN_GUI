@@ -5,7 +5,6 @@ Uses small models (units=4, num_points=8) for speed.
 """
 
 import numpy as np
-import pytest
 import tensorflow as tf
 from tensorflow import keras
 
@@ -23,7 +22,6 @@ from ntpn.point_net import (
     tnet,
 )
 
-
 # Common model params for fast tests
 NUM_POINTS = 8
 NUM_CLASSES = 2
@@ -35,8 +33,8 @@ DIMS = 3
 # Model construction
 # ---------------------------------------------------------------------------
 
-class TestPointNet:
 
+class TestPointNet:
     def test_output_shape(self):
         model = point_net(NUM_POINTS, NUM_CLASSES, units=UNITS, dims=DIMS)
         assert model.output_shape == (None, NUM_CLASSES)
@@ -53,7 +51,6 @@ class TestPointNet:
 
 
 class TestPointNetNoTransform:
-
     def test_output_shape(self):
         model = point_net_no_transform(NUM_POINTS, NUM_CLASSES, units=UNITS, dims=DIMS)
         assert model.output_shape == (None, NUM_CLASSES)
@@ -66,7 +63,6 @@ class TestPointNetNoTransform:
 
 
 class TestPointNetNoPool:
-
     def test_output_shape(self):
         model = point_net_no_pool(NUM_POINTS, NUM_CLASSES, units=UNITS, dims=DIMS)
         assert model.output_shape == (None, NUM_CLASSES)
@@ -78,14 +74,12 @@ class TestPointNetNoPool:
 
 
 class TestPointNetNoPoolNoTransform:
-
     def test_output_shape(self):
         model = point_net_no_pool_no_transform(NUM_POINTS, NUM_CLASSES, units=UNITS, dims=DIMS)
         assert model.output_shape == (None, NUM_CLASSES)
 
 
 class TestPointNetSegment:
-
     def test_output_shape(self):
         model = point_net_segment(NUM_POINTS, NUM_CLASSES, units=UNITS, dims=DIMS)
         assert model.output_shape == (None, NUM_POINTS, NUM_CLASSES)
@@ -95,8 +89,8 @@ class TestPointNetSegment:
 # Building blocks
 # ---------------------------------------------------------------------------
 
-class TestConvBn:
 
+class TestConvBn:
     def test_shape_preserved(self):
         inp = keras.Input(shape=(NUM_POINTS, DIMS))
         out = conv_bn(inp, filters=16)
@@ -105,7 +99,6 @@ class TestConvBn:
 
 
 class TestDenseBn:
-
     def test_correct_output_dim(self):
         inp = keras.Input(shape=(32,))
         out = dense_bn(inp, filters=16)
@@ -114,7 +107,6 @@ class TestDenseBn:
 
 
 class TestTnet:
-
     def test_output_shape_matches_input(self):
         inp = keras.Input(shape=(NUM_POINTS, DIMS))
         out = tnet(inp, num_features=DIMS, units=UNITS)
@@ -123,7 +115,6 @@ class TestTnet:
 
 
 class TestOrthogonalRegularizer:
-
     def test_call_returns_scalar(self):
         reg = OrthogonalRegularizer(num_features=3)
         x = tf.random.normal((1, 9))  # 3x3 flattened
@@ -143,8 +134,8 @@ class TestOrthogonalRegularizer:
 # Critical / upper set extraction
 # ---------------------------------------------------------------------------
 
-class TestGenerateCritical:
 
+class TestGenerateCritical:
     def test_output_shape(self):
         np.random.seed(42)
         num_samples = 5
@@ -168,7 +159,6 @@ class TestGenerateCritical:
 
 
 class TestGenerateUpper:
-
     def test_output_shape(self):
         np.random.seed(42)
         num_samples = 3

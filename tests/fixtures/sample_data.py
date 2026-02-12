@@ -1,16 +1,11 @@
 """Synthetic test data generators for NTPN GUI tests."""
 
 import numpy as np
-from typing import List, Tuple
 
 
 def generate_spike_data(
-    n_sessions: int = 3,
-    n_neurons: int = 20,
-    n_time_bins: int = 100,
-    n_classes: int = 2,
-    seed: int = 42
-) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+    n_sessions: int = 3, n_neurons: int = 20, n_time_bins: int = 100, n_classes: int = 2, seed: int = 42
+) -> tuple[list[np.ndarray], list[np.ndarray]]:
     """
     Generate synthetic spike count data for testing.
 
@@ -46,12 +41,8 @@ def generate_spike_data(
 
 
 def generate_trajectories(
-    n_trajectories: int = 50,
-    n_neurons: int = 20,
-    trajectory_length: int = 32,
-    n_classes: int = 2,
-    seed: int = 42
-) -> Tuple[np.ndarray, np.ndarray]:
+    n_trajectories: int = 50, n_neurons: int = 20, trajectory_length: int = 32, n_classes: int = 2, seed: int = 42
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Generate synthetic trajectory data for testing.
 
@@ -78,12 +69,7 @@ def generate_trajectories(
     return trajectories, labels
 
 
-def generate_model_output(
-    n_samples: int = 50,
-    n_features: int = 32,
-    n_classes: int = 2,
-    seed: int = 42
-) -> np.ndarray:
+def generate_model_output(n_samples: int = 50, n_features: int = 32, n_classes: int = 2, seed: int = 42) -> np.ndarray:
     """
     Generate synthetic model output (e.g., features before max pooling).
 

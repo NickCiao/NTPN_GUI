@@ -1,6 +1,5 @@
 """Unit tests for ntpn.ntpn_constants module."""
 
-import pytest
 from pathlib import Path
 
 from ntpn import ntpn_constants
@@ -49,34 +48,46 @@ class TestConstantTypes:
 
     def test_int_constants_are_int(self):
         int_constants = [
-            'DEFAULT_WINDOW_SIZE', 'DEFAULT_WINDOW_STRIDE', 'DEFAULT_NUM_NEURONS',
-            'DEFAULT_TRAJECTORY_LENGTH', 'DEFAULT_LAYER_WIDTH', 'DEFAULT_BATCH_SIZE',
-            'DEFAULT_EPOCHS', 'DEFAULT_NUM_CRITICAL_SAMPLES',
-            'DEFAULT_NUM_PLOT_EXAMPLES', 'DEFAULT_PLOT_DIMENSIONS',
+            'DEFAULT_WINDOW_SIZE',
+            'DEFAULT_WINDOW_STRIDE',
+            'DEFAULT_NUM_NEURONS',
+            'DEFAULT_TRAJECTORY_LENGTH',
+            'DEFAULT_LAYER_WIDTH',
+            'DEFAULT_BATCH_SIZE',
+            'DEFAULT_EPOCHS',
+            'DEFAULT_NUM_CRITICAL_SAMPLES',
+            'DEFAULT_NUM_PLOT_EXAMPLES',
+            'DEFAULT_PLOT_DIMENSIONS',
             'UMAP_N_NEIGHBORS',
         ]
         for name in int_constants:
             val = getattr(ntpn_constants, name)
-            assert isinstance(val, int), f"{name} should be int, got {type(val)}"
+            assert isinstance(val, int), f'{name} should be int, got {type(val)}'
 
     def test_float_constants_are_float(self):
         float_constants = [
-            'DEFAULT_TEST_SIZE', 'DEFAULT_LEARNING_RATE',
-            'BATCH_NORM_MOMENTUM', 'DROPOUT_RATE', 'L2_REGULARIZATION',
+            'DEFAULT_TEST_SIZE',
+            'DEFAULT_LEARNING_RATE',
+            'BATCH_NORM_MOMENTUM',
+            'DROPOUT_RATE',
+            'L2_REGULARIZATION',
             'UMAP_MIN_DIST',
         ]
         for name in float_constants:
             val = getattr(ntpn_constants, name)
-            assert isinstance(val, float), f"{name} should be float, got {type(val)}"
+            assert isinstance(val, float), f'{name} should be float, got {type(val)}'
 
     def test_string_constants_are_str(self):
         str_constants = [
-            'CRITICAL_SET_LAYER_NAME', 'MODEL_SAVE_DIR',
-            'demo_st_file', 'demo_context_file', 'dataset_name',
+            'CRITICAL_SET_LAYER_NAME',
+            'MODEL_SAVE_DIR',
+            'demo_st_file',
+            'demo_context_file',
+            'dataset_name',
         ]
         for name in str_constants:
             val = getattr(ntpn_constants, name)
-            assert isinstance(val, str), f"{name} should be str, got {type(val)}"
+            assert isinstance(val, str), f'{name} should be str, got {type(val)}'
 
 
 class TestConstantValues:
@@ -116,11 +127,9 @@ class TestNoHardcodedActivation14:
     def test_no_hardcoded_in_visualization_service(self):
         source = Path('ntpn/visualization_service.py').read_text()
         assert "'activation_14'" not in source, (
-            "visualization_service.py should use ntpn_constants.CRITICAL_SET_LAYER_NAME"
+            'visualization_service.py should use ntpn_constants.CRITICAL_SET_LAYER_NAME'
         )
 
     def test_no_hardcoded_in_ntpn_utils(self):
         source = Path('ntpn/ntpn_utils.py').read_text()
-        assert "'activation_14'" not in source, (
-            "ntpn_utils.py should use ntpn_constants.CRITICAL_SET_LAYER_NAME"
-        )
+        assert "'activation_14'" not in source, 'ntpn_utils.py should use ntpn_constants.CRITICAL_SET_LAYER_NAME'

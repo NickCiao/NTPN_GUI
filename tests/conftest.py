@@ -1,18 +1,15 @@
 """Pytest configuration and shared fixtures for NTPN GUI tests."""
 
-import pytest
-import numpy as np
-from typing import List, Tuple, Dict, Any
 from unittest.mock import MagicMock
-from tests.fixtures.sample_data import (
-    generate_spike_data,
-    generate_trajectories,
-    generate_model_output
-)
+
+import numpy as np
+import pytest
+
+from tests.fixtures.sample_data import generate_model_output, generate_spike_data, generate_trajectories
 
 
 @pytest.fixture
-def sample_spike_data() -> Tuple[List[np.ndarray], List[np.ndarray]]:
+def sample_spike_data() -> tuple[list[np.ndarray], list[np.ndarray]]:
     """
     Generate synthetic spike count data for testing.
 
@@ -21,17 +18,11 @@ def sample_spike_data() -> Tuple[List[np.ndarray], List[np.ndarray]]:
         - spike_data_list: List of 3 sessions with (20 neurons, 100 time bins)
         - labels_list: List of 3 label arrays with 100 time bins each
     """
-    return generate_spike_data(
-        n_sessions=3,
-        n_neurons=20,
-        n_time_bins=100,
-        n_classes=2,
-        seed=42
-    )
+    return generate_spike_data(n_sessions=3, n_neurons=20, n_time_bins=100, n_classes=2, seed=42)
 
 
 @pytest.fixture
-def sample_labels() -> List[np.ndarray]:
+def sample_labels() -> list[np.ndarray]:
     """
     Generate sample class labels matching time bins.
 
@@ -43,7 +34,7 @@ def sample_labels() -> List[np.ndarray]:
 
 
 @pytest.fixture
-def sample_trajectories() -> Tuple[np.ndarray, np.ndarray]:
+def sample_trajectories() -> tuple[np.ndarray, np.ndarray]:
     """
     Generate synthetic trajectory data for testing.
 
@@ -52,30 +43,18 @@ def sample_trajectories() -> Tuple[np.ndarray, np.ndarray]:
         - trajectories: (50, 20, 32) array
         - labels: (50,) array
     """
-    return generate_trajectories(
-        n_trajectories=50,
-        n_neurons=20,
-        trajectory_length=32,
-        n_classes=2,
-        seed=42
-    )
+    return generate_trajectories(n_trajectories=50, n_neurons=20, trajectory_length=32, n_classes=2, seed=42)
 
 
 @pytest.fixture
-def small_spike_data() -> Tuple[List[np.ndarray], List[np.ndarray]]:
+def small_spike_data() -> tuple[list[np.ndarray], list[np.ndarray]]:
     """
     Generate small synthetic spike data for fast tests.
 
     Returns:
         Tuple of (spike_data_list, labels_list) with 2 sessions, 10 neurons, 50 bins
     """
-    return generate_spike_data(
-        n_sessions=2,
-        n_neurons=10,
-        n_time_bins=50,
-        n_classes=2,
-        seed=42
-    )
+    return generate_spike_data(n_sessions=2, n_neurons=10, n_time_bins=50, n_classes=2, seed=42)
 
 
 @pytest.fixture
@@ -89,7 +68,7 @@ def mock_session_state() -> MagicMock:
     state = MagicMock()
 
     # Default state values
-    state.dataset_name = "demo_data"
+    state.dataset_name = 'demo_data'
     state.dataset = None
     state.labels = None
     state.ntpn_model = None
@@ -114,12 +93,7 @@ def sample_model_output() -> np.ndarray:
     Returns:
         Model features array of shape (50, 32)
     """
-    return generate_model_output(
-        n_samples=50,
-        n_features=32,
-        n_classes=2,
-        seed=42
-    )
+    return generate_model_output(n_samples=50, n_features=32, n_classes=2, seed=42)
 
 
 @pytest.fixture
@@ -135,12 +109,8 @@ def temp_data_file(tmp_path):
     """
     spike_data, labels = generate_spike_data(n_sessions=2, seed=42)
 
-    file_path = tmp_path / "test_data.npz"
-    np.savez(
-        file_path,
-        data=spike_data,
-        labels=labels
-    )
+    file_path = tmp_path / 'test_data.npz'
+    np.savez(file_path, data=spike_data, labels=labels)
 
     return file_path
 

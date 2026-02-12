@@ -14,10 +14,10 @@ from ntpn.analysis import (
     select_closest_trajectories,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fixtures — small synthetic data to keep tests fast
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def small_samples():
@@ -37,8 +37,8 @@ def small_cs(small_samples):
 # PCA
 # ---------------------------------------------------------------------------
 
-class TestPcaCsWindowed:
 
+class TestPcaCsWindowed:
     def test_output_shapes_3d(self, small_cs, small_samples):
         mapped_cs, mapped_samples = pca_cs_windowed(small_cs, small_samples, dims=3)
         assert mapped_cs.shape == (10, 8, 3)
@@ -60,8 +60,8 @@ class TestPcaCsWindowed:
 # CS processing
 # ---------------------------------------------------------------------------
 
-class TestCsExtractUniques:
 
+class TestCsExtractUniques:
     def test_returns_list_and_min_size(self, small_cs):
         # Add duplicates to test unique extraction
         cs = small_cs.copy()
@@ -79,7 +79,6 @@ class TestCsExtractUniques:
 
 
 class TestCsSubsample:
-
     def test_correct_subsampling(self):
         cs_list = [
             np.random.randn(10, 3),
@@ -103,8 +102,8 @@ class TestCsSubsample:
 # CCA alignment
 # ---------------------------------------------------------------------------
 
-class TestCalcCcaTrajectories:
 
+class TestCalcCcaTrajectories:
     def test_output_shape(self, small_samples):
         exemplar = small_samples[0]
         example, aligned = calc_cca_trajectories(exemplar, small_samples, ex_index=0, ndims=3)
@@ -118,7 +117,6 @@ class TestCalcCcaTrajectories:
 
 
 class TestSelectClosestTrajectories:
-
     def test_returns_correct_count(self, small_samples):
         exemplar = small_samples[0]
         aligned = np.random.randn(10, 8, 3)
@@ -128,27 +126,21 @@ class TestSelectClosestTrajectories:
 
 
 class TestGenerateUniquesFromTrajectories:
-
     def test_fixed_mode(self, small_samples):
         exemplar = small_samples[0]
         trajectories = small_samples[1:4]
-        point_set, all_points = generate_uniques_from_trajectories(
-            exemplar, trajectories, mode='fixed', threshold=0.0
-        )
+        point_set, all_points = generate_uniques_from_trajectories(exemplar, trajectories, mode='fixed', threshold=0.0)
         assert isinstance(point_set, list)
         assert len(point_set) > 0
 
     def test_dynamic_mode(self, small_samples):
         exemplar = small_samples[0]
         trajectories = small_samples[1:4]
-        point_set, all_points = generate_uniques_from_trajectories(
-            exemplar, trajectories, mode='dynamic'
-        )
+        point_set, all_points = generate_uniques_from_trajectories(exemplar, trajectories, mode='dynamic')
         assert isinstance(point_set, list)
 
 
 class TestGenerateCcaTrajectories:
-
     def test_returns_4_tuple(self, small_samples, small_cs):
         result = generate_cca_trajectories(small_samples, small_cs, num_examples=3)
         assert len(result) == 4
@@ -160,12 +152,9 @@ class TestGenerateCcaTrajectories:
 
 
 class TestGenerateUpperSets:
-
     @pytest.mark.timeout(60)
     def test_returns_2_tuple(self, small_samples, small_cs):
-        raw_uppers, cs_uppers = generate_upper_sets(
-            small_samples, small_cs, num_sets=2, upper_size=5, threshold=0.2
-        )
+        raw_uppers, cs_uppers = generate_upper_sets(small_samples, small_cs, num_sets=2, upper_size=5, threshold=0.2)
         assert len(raw_uppers) == 2
         assert len(cs_uppers) == 2
 
@@ -174,22 +163,21 @@ class TestGenerateUpperSets:
 # UMAP (slow tests)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.slow
 class TestUmapWindowed:
-
     def test_output_shape(self, small_samples):
         from ntpn.analysis import umap_windowed
+
         result = umap_windowed(small_samples, dims=2, neighbours=5)
         assert result.shape == (10, 8, 2)
 
 
 @pytest.mark.slow
 class TestUmapCsWindowed:
-
     def test_output_shapes(self, small_cs, small_samples):
         from ntpn.analysis import umap_cs_windowed
-        mapped_cs, mapped_samples = umap_cs_windowed(
-            small_cs, small_samples, dims=2, neighbours=5
-        )
+
+        mapped_cs, mapped_samples = umap_cs_windowed(small_cs, small_samples, dims=2, neighbours=5)
         assert mapped_cs.shape == (10, 8, 2)
         assert mapped_samples.shape == (10, 8, 2)

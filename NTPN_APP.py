@@ -8,9 +8,6 @@ Created on Fri Feb  7 13:10:47 2025
 
 import streamlit as st
 
-from ntpn import point_net_utils
-from ntpn import point_net
-from ntpn import ntpn_utils
 from ntpn.state_manager import get_state_manager
 from ntpn.logging_config import setup_logging
 

@@ -52,9 +52,7 @@ class TestEndToEndPreprocessing:
             assert x.shape == stcut_list[i].shape
 
         # Step 3: Window projection
-        X_sw_list, Y_sw_list = window_projection(
-            X_pow_list, label_cut_list, selection, window_size=5, stride=1
-        )
+        X_sw_list, Y_sw_list = window_projection(X_pow_list, label_cut_list, selection, window_size=5, stride=1)
         assert len(X_sw_list) == 2
         for X_sw, Y_sw in zip(X_sw_list, Y_sw_list):
             assert X_sw.ndim == 3

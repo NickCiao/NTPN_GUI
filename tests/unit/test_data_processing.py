@@ -24,10 +24,10 @@ from ntpn.data_processing import (
     window_projection_segments,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def trajectories_3d():
@@ -66,8 +66,8 @@ def spike_multi_session():
 # Sampling / selection
 # ---------------------------------------------------------------------------
 
-class TestSelectSamples:
 
+class TestSelectSamples:
     def test_correct_shape(self, trajectories_3d):
         X, Y = trajectories_3d
         samples = select_samples(X, Y, num_samples=5, class_label=0)
@@ -89,7 +89,6 @@ class TestSelectSamples:
 
 
 class TestSelectSamplesCs:
-
     def test_paired_selection(self, trajectories_3d):
         X, _ = trajectories_3d
         cs = np.random.randn(50, 20, 3).astype(np.float32)
@@ -108,7 +107,6 @@ class TestSelectSamplesCs:
 
 
 class TestSubsampleNeurons:
-
     def test_2d_output_shape(self):
         stbin = np.random.randn(100, 50).astype(np.float32)
         out = subsample_neurons(stbin, sample_size=20)
@@ -126,7 +124,6 @@ class TestSubsampleNeurons:
 
 
 class TestSubsampleNeurons3d:
-
     def test_output_shape(self):
         stbin = np.random.randn(50, 20, 3).astype(np.float32)
         out = subsample_neurons_3d(stbin, sample_size=10)
@@ -139,7 +136,6 @@ class TestSubsampleNeurons3d:
 
 
 class TestSubsampleDataset3dWithin:
-
     def test_concatenation(self):
         stbin_list = [
             np.random.randn(30, 20, 3).astype(np.float32),
@@ -156,14 +152,11 @@ class TestSubsampleDataset3dWithin:
 
 
 class TestSubsampleDataset3dAcross:
-
     def test_balanced_output(self, trajectories_3d):
         X, Y = trajectories_3d
         stbin_list = [X]
         labels_list = [Y]
-        out_neurons, out_labels = subsample_dataset_3d_across(
-            stbin_list, labels_list, num_samples=10, sample_size=8
-        )
+        out_neurons, out_labels = subsample_dataset_3d_across(stbin_list, labels_list, num_samples=10, sample_size=8)
         # Should have num_samples * num_classes samples
         assert out_neurons.shape[0] == 20  # 10 per class * 2 classes
         assert out_neurons.shape[1] == 8
@@ -176,8 +169,8 @@ class TestSubsampleDataset3dAcross:
 # Preprocessing
 # ---------------------------------------------------------------------------
 
-class TestPrecutNoise:
 
+class TestPrecutNoise:
     def test_1d_num_data(self):
         labels = np.array([0, 1, -1, 0, -1, 1])
         num_data = np.array([10, 20, 30, 40, 50, 60])
@@ -202,7 +195,6 @@ class TestPrecutNoise:
 
 
 class TestRemoveNoiseCat:
-
     def test_single_session(self, spike_single_session):
         stbin, labels = spike_single_session
         st_cut, label_cut = remove_noise_cat(stbin, labels, selection=[0])
@@ -219,7 +211,6 @@ class TestRemoveNoiseCat:
 
 
 class TestPowTransform:
-
     def test_single_session(self, spike_single_session):
         stbin, _ = spike_single_session
         # Ensure positive values for power_transform
@@ -236,7 +227,6 @@ class TestPowTransform:
 
 
 class TestStdTransform:
-
     def test_single_session(self, spike_single_session):
         stbin, _ = spike_single_session
         result = std_transform(stbin, selection=[0])
@@ -254,8 +244,8 @@ class TestStdTransform:
 # Windowing
 # ---------------------------------------------------------------------------
 
-class TestWindowProjection:
 
+class TestWindowProjection:
     def test_single_session(self, spike_single_session):
         stbin, labels = spike_single_session
         X_sw, Y_sw = window_projection(stbin, labels, selection=[0], window_size=5, stride=1)
@@ -264,9 +254,7 @@ class TestWindowProjection:
 
     def test_multi_session(self, spike_multi_session):
         stbin_list, labels_list = spike_multi_session
-        X_sw_list, Y_sw_list = window_projection(
-            stbin_list, labels_list, selection=[0, 1], window_size=5, stride=1
-        )
+        X_sw_list, Y_sw_list = window_projection(stbin_list, labels_list, selection=[0, 1], window_size=5, stride=1)
         assert len(X_sw_list) == 2
         assert len(Y_sw_list) == 2
         for X_sw in X_sw_list:
@@ -274,7 +262,6 @@ class TestWindowProjection:
 
 
 class TestWindowProjectionSegments:
-
     def test_single_session(self, spike_single_session):
         stbin, labels = spike_single_session
         X_sw, Y_sw = window_projection_segments(stbin, labels, selection=[0], window_size=5, stride=1)
@@ -292,8 +279,8 @@ class TestWindowProjectionSegments:
 # Splitting
 # ---------------------------------------------------------------------------
 
-class TestTrainTestGen:
 
+class TestTrainTestGen:
     def test_output_shapes(self, trajectories_3d):
         X, Y = trajectories_3d
         X_train, X_val, Y_train, Y_val = train_test_gen(X, Y, test_size=0.2)
@@ -309,7 +296,6 @@ class TestTrainTestGen:
 
 
 class TestTrainTestTensors:
-
     def test_returns_tf_datasets(self, trajectories_3d):
         X, Y = trajectories_3d
         X_train, X_val, Y_train, Y_val = train_test_gen(X, Y, test_size=0.2)
@@ -319,7 +305,6 @@ class TestTrainTestTensors:
 
 
 class TestSplitBalanced:
-
     def test_balanced_class_distribution(self, trajectories_3d):
         X, Y = trajectories_3d
         X_train, X_test, y_train, y_test = split_balanced(X, Y, test_size=0.2)
@@ -344,8 +329,8 @@ class TestSplitBalanced:
 # Utility
 # ---------------------------------------------------------------------------
 
-class TestUnitSphere:
 
+class TestUnitSphere:
     def test_output_shape(self):
         result = unit_sphere()
         assert result.shape == (128, 32, 3)
@@ -363,7 +348,6 @@ class TestUnitSphere:
 
 
 class TestGenPermutedData:
-
     def test_width_mode(self):
         neurons = np.random.randn(100, 50).astype(np.float32)
         labels = np.arange(100)

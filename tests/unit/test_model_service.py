@@ -1,8 +1,8 @@
 """Unit tests for ntpn.model_service module."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-import numpy as np
-from unittest.mock import MagicMock, patch, PropertyMock
 import streamlit as st
 
 from ntpn.state_manager import StateManager
@@ -32,6 +32,7 @@ class TestCreateModel:
         mock_pn.point_net.return_value = mock_model
 
         from ntpn.model_service import create_model
+
         create_model(32, 2, 32, 11, state=state)
 
         mock_pn.point_net.assert_called_once_with(32, 2, units=32, dims=11)
@@ -43,6 +44,7 @@ class TestCreateModel:
         mock_pn.point_net.return_value = MagicMock()
 
         from ntpn.model_service import create_model
+
         create_model(32, 2, 32, 11, state=state)
 
         assert 'ntpn_model' in st.session_state
@@ -59,6 +61,7 @@ class TestCompileModel:
         state.model.ntpn_model = mock_model
 
         from ntpn.model_service import compile_model
+
         compile_model(learning_rate=0.01, view=True, state=state)
 
         assert state.model.loss_fn is not None
@@ -74,6 +77,7 @@ class TestCompileModel:
         state.model.ntpn_model = mock_model
 
         from ntpn.model_service import compile_model
+
         compile_model(loss='sparse_categorical_crossentropy', learning_rate=0.02, state=state)
 
         mock_model.compile.assert_called_once()
@@ -90,11 +94,8 @@ class TestTrainStep:
         from tensorflow import keras
 
         # Create a minimal model
-        model = keras.Sequential([
-            keras.layers.Dense(2, activation='softmax', input_shape=(3,))
-        ])
-        model.compile(loss='sparse_categorical_crossentropy', optimizer='adam',
-                      metrics=['sparse_categorical_accuracy'])
+        model = keras.Sequential([keras.layers.Dense(2, activation='softmax', input_shape=(3,))])
+        model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['sparse_categorical_accuracy'])
 
         state.model.ntpn_model = model
         state.model.loss_fn = keras.losses.SparseCategoricalCrossentropy()
@@ -105,6 +106,7 @@ class TestTrainStep:
         y = tf.constant([0], dtype=tf.int32)
 
         from ntpn.model_service import train_step
+
         loss = train_step(x, y, state=state)
 
         assert loss is not None
@@ -119,9 +121,7 @@ class TestTestStep:
         import tensorflow as tf
         from tensorflow import keras
 
-        model = keras.Sequential([
-            keras.layers.Dense(2, activation='softmax', input_shape=(3,))
-        ])
+        model = keras.Sequential([keras.layers.Dense(2, activation='softmax', input_shape=(3,))])
         model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
 
         state.model.ntpn_model = model
@@ -132,6 +132,7 @@ class TestTestStep:
         y = tf.constant([0], dtype=tf.int32)
 
         from ntpn.model_service import test_step
+
         loss = test_step(x, y, state=state)
 
         assert loss is not None
@@ -147,6 +148,7 @@ class TestSaveModel:
         state.model.ntpn_model = mock_model
 
         from ntpn.model_service import save_model
+
         save_model('test_model', state=state)
 
         mock_model.save.assert_called_once_with(

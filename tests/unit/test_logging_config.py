@@ -1,9 +1,8 @@
 """Unit tests for ntpn.logging_config module."""
 
-import pytest
 import logging
-import os
-from unittest.mock import patch
+
+import pytest
 
 # Reset the module state before import
 import ntpn.logging_config as logging_config

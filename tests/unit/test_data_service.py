@@ -1,8 +1,9 @@
 """Unit tests for ntpn.data_service module."""
 
-import pytest
-import numpy as np
 from unittest.mock import MagicMock, patch
+
+import numpy as np
+import pytest
 import streamlit as st
 
 from ntpn.state_manager import StateManager
@@ -33,19 +34,20 @@ class TestLoadDemoSession:
         mock_utils.load_data_pickle.return_value = (mock_data, mock_labels)
 
         from ntpn.data_service import load_demo_session
+
         load_demo_session(state=state)
 
         assert state.data.dataset is mock_data
         assert state.data.labels is mock_labels
-        assert state.data.dataset_name == "demo_data"
+        assert state.data.dataset_name == 'demo_data'
 
     @patch('ntpn.data_service.data_processing')
     def test_calls_load_data_with_constants(self, mock_utils, state):
         """load_demo_session uses file paths from ntpn_constants."""
         mock_utils.load_data_pickle.return_value = ([], [])
 
-        from ntpn.data_service import load_demo_session
         from ntpn import ntpn_constants
+        from ntpn.data_service import load_demo_session
 
         load_demo_session(state=state)
 
@@ -61,6 +63,7 @@ class TestLoad2DData:
 
     def test_is_callable(self, state):
         from ntpn.data_service import load_2D_data
+
         load_2D_data(state=state)
 
 
@@ -69,6 +72,7 @@ class TestLoad3DData:
 
     def test_is_callable(self, state):
         from ntpn.data_service import load_3D_data
+
         load_3D_data(state=state)
 
 
@@ -89,6 +93,7 @@ class TestSessionSelect:
         ]
 
         from ntpn.data_service import session_select
+
         session_select([0, 2], trim_noise=False, state=state)
 
         assert len(state.data.select_samples) == 2
@@ -103,6 +108,7 @@ class TestSessionSelect:
         mock_utils.remove_noise_cat.return_value = ([np.array([[1, 2]])], [np.array([0])])
 
         from ntpn.data_service import session_select
+
         session_select([0], trim_noise=True, state=state)
 
         mock_utils.remove_noise_cat.assert_called_once()
@@ -121,6 +127,7 @@ class TestSamplesTransform:
         mock_utils.pow_transform.return_value = [np.array([[2, 3, 4]])]
 
         from ntpn.data_service import samples_transform
+
         samples_transform('Power', state=state)
 
         mock_utils.pow_transform.assert_called_once_with(test_samples, test_indices)
@@ -133,6 +140,7 @@ class TestSamplesTransform:
         state.data.select_indices = [0]
 
         from ntpn.data_service import samples_transform
+
         samples_transform('Raw', state=state)
 
         assert state.data.tsf_samples is test_samples
@@ -157,6 +165,7 @@ class TestCreateTrajectories:
         )
 
         from ntpn.data_service import create_trajectories
+
         create_trajectories(32, 8, 11, state=state)
 
         assert state.data.sub_samples is not None
@@ -183,6 +192,7 @@ class TestCreateTrainTest:
         mock_utils.train_test_tensors.return_value = (mock_train_ds, mock_test_ds)
 
         from ntpn.data_service import create_train_test
+
         create_train_test(0.2, state=state)
 
         assert state.model.train_tensors is mock_train_ds

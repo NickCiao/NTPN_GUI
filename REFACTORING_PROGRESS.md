@@ -300,5 +300,43 @@
 
 ---
 
+## Phase 6: Page Migration — Direct Service Imports - COMPLETE
+
+**Completed:** 2026-02-12
+
+### Goal
+Remove the `ntpn_utils` facade indirection: pages now import directly from service modules (`data_service`, `model_service`, `visualization_service`), and `ntpn_utils.py` is stripped down to only 4 Streamlit-specific functions.
+
+### Changes
+
+**Pages migrated (4 files):**
+- `pages/import_and_load_page.py` — 5 call sites remapped from `ntpn_utils.*` to direct `data_service`/`model_service` imports
+- `pages/train_model_page.py` — 2 call sites remapped (`create_model`, `compile_model`); `train_model` stays in `ntpn_utils` (Streamlit dispatch)
+- `pages/ntpn_visualisations_page.py` — 2 call sites remapped (`generate_critical_sets`, `draw_cs_plots`)
+- `pages/ntpn_landing_page.py` — import style changed to `from ntpn.ntpn_utils import initialise_session, draw_image`
+
+**Core modules cleaned up:**
+- `NTPN_APP.py` — Removed 3 unused imports (`point_net_utils`, `point_net`, `ntpn_utils`)
+- `ntpn/ntpn_utils.py` — Removed all 16 re-export lines; kept 4 Streamlit functions (`initialise_session`, `train_for_streamlit`, `train_model`, `draw_image`); internal dependencies (`load_demo_session`, `train_step`, `test_step`) imported directly from service modules
+
+**Tests updated:**
+- `tests/regression/test_service_backward_compat.py` — Removed 3 re-export test classes (22 tests); kept `TestStreamlitFunctionsRemain` and `TestServiceModulesNoStreamlit`; added `TestPagesUseDirectServiceImports` (8 parametrized tests) and `TestNtpnUtilsReExportsRemoved` (18 parametrized tests)
+
+### Phase 6 Statistics
+
+**Tests:** 331 total (all passing)
+- New tests: 26 (direct-import verification + re-export removal checks)
+- Removed tests: 22 (obsolete re-export backward-compat tests)
+- Net change: +4 tests
+
+**Coverage:** 89.34% (up from 88.21%)
+
+**Import graph simplified:**
+- Before: `page → ntpn_utils (facade) → service module`
+- After: `page → service module` (direct)
+- `ntpn_utils` reduced from 49 lines of re-exports + 4 functions → 4 functions only
+
+---
+
 **Last Updated:** 2026-02-12
-**Status:** Phases 1-5 Complete
+**Status:** Phases 1-6 Complete

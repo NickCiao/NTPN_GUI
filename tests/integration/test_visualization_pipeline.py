@@ -4,6 +4,7 @@ Tests critical set extraction through analysis and plotting.
 """
 
 import matplotlib
+
 matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
@@ -104,7 +105,5 @@ class TestCCAAlignmentWorkflow:
         assert closest.shape[0] == 5
 
         # Step 3: Generate unique points
-        point_set, all_points = generate_uniques_from_trajectories(
-            example, closest, mode='fixed', threshold=0.1
-        )
+        point_set, all_points = generate_uniques_from_trajectories(example, closest, mode='fixed', threshold=0.1)
         assert len(point_set) > 0

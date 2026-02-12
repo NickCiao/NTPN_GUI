@@ -5,14 +5,16 @@ Uses Agg backend for headless rendering.
 """
 
 import matplotlib
+
 matplotlib.use('Agg')
+
+from unittest.mock import patch
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from matplotlib.figure import Figure
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
-from unittest.mock import patch
 
 from ntpn.plotting import (
     cloud_to_lines,
@@ -28,10 +30,10 @@ from ntpn.plotting import (
     trajectory_to_lines,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(autouse=True)
 def close_plots():
@@ -79,15 +81,14 @@ def cs_2d():
 # Line collection helpers
 # ---------------------------------------------------------------------------
 
-class TestTrajectoryToLines:
 
+class TestTrajectoryToLines:
     def test_returns_line3d_collection(self, sample_3d):
         result = trajectory_to_lines(sample_3d)
         assert isinstance(result, Line3DCollection)
 
 
 class TestCloudToLines:
-
     def test_returns_line3d_collection(self, sample_3d):
         result = cloud_to_lines(sample_3d)
         assert isinstance(result, Line3DCollection)
@@ -97,8 +98,8 @@ class TestCloudToLines:
 # Plot functions
 # ---------------------------------------------------------------------------
 
-class TestPlotSample:
 
+class TestPlotSample:
     def test_scatter_mode(self, sample_3d):
         fig = plot_sample(sample_3d, mode='scatter')
         assert isinstance(fig, Figure)
@@ -121,7 +122,6 @@ class TestPlotSample:
 
 
 class TestPlotSampleSegmented:
-
     def test_returns_figure(self, sample_3d):
         labels = np.random.randint(0, 3, size=20)
         fig = plot_sample_segmented(sample_3d, labels)
@@ -134,7 +134,6 @@ class TestPlotSampleSegmented:
 
 
 class TestPlotSamples:
-
     def test_scatter_mode(self, samples_3d):
         fig = plot_samples(samples_3d, num_samples=3, mode='scatter')
         assert isinstance(fig, Figure)
@@ -149,21 +148,18 @@ class TestPlotSamples:
 
 
 class TestPlotCritical:
-
     def test_returns_figure(self, cs_3d, samples_3d):
         fig = plot_critical(cs_3d, num_samples=3, samples=samples_3d)
         assert isinstance(fig, Figure)
 
 
 class TestPlotCriticalUmap2D:
-
     def test_returns_figure(self, cs_2d, samples_2d):
         fig = plot_critical_umap2D(cs_2d, num_samples=3, samples=samples_2d)
         assert isinstance(fig, Figure)
 
 
 class TestPlotUpperBound:
-
     def test_scatter_mode(self, sample_3d):
         fig = plot_upper_bound(sample_3d, mode='scatter')
         assert isinstance(fig, Figure)
@@ -182,7 +178,6 @@ class TestPlotUpperBound:
 
 
 class TestPlotTargetTrajectory:
-
     def test_with_2d_comps(self, sample_3d):
         comps = np.random.randn(20, 3).astype(np.float32)
         fig = plot_target_trajectory(sample_3d, comps)
@@ -194,14 +189,12 @@ class TestPlotTargetTrajectory:
 
 
 class TestPlotTargetTrajectoryGrid:
-
     def test_returns_figure(self, sample_3d, samples_3d):
         fig = plot_target_trajectory_grid(sample_3d, samples_3d[:3])
         assert isinstance(fig, Figure)
 
 
 class TestLoadImage:
-
     @patch('ntpn.plotting.skio.imread')
     def test_calls_imread(self, mock_imread):
         mock_imread.return_value = np.zeros((100, 100, 3))

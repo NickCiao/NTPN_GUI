@@ -7,9 +7,6 @@ model.summary() without print_fn.
 import re
 from pathlib import Path
 
-import pytest
-
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
@@ -77,12 +74,8 @@ class TestNoPrintStatements:
                 if refs:
                     all_refs[rel_path] = refs
 
-        assert all_refs == {}, (
-            "Found print() calls in production code (use logger instead):\n"
-            + "\n".join(
-                f"  {name}:\n" + "\n".join(f"    L{n}: {l}" for n, l in refs)
-                for name, refs in all_refs.items()
-            )
+        assert all_refs == {}, 'Found print() calls in production code (use logger instead):\n' + '\n'.join(
+            f'  {name}:\n' + '\n'.join(f'    L{n}: {l}' for n, l in refs) for name, refs in all_refs.items()
         )
 
 
@@ -93,9 +86,8 @@ class TestNoBareModelSummary:
         """point_net.py should not have bare model.summary() calls."""
         filepath = PROJECT_ROOT / 'ntpn' / 'point_net.py'
         refs = _find_bare_model_summary(filepath)
-        assert refs == [], (
-            f"Found bare model.summary() in point_net.py (use logger or print_fn):\n"
-            + "\n".join(f"  L{n}: {l}" for n, l in refs)
+        assert refs == [], 'Found bare model.summary() in point_net.py (use logger or print_fn):\n' + '\n'.join(
+            f'  L{n}: {l}' for n, l in refs
         )
 
     def test_no_bare_summary_in_services(self):
@@ -112,10 +104,6 @@ class TestNoBareModelSummary:
                 if refs:
                     all_refs[rel_path] = refs
 
-        assert all_refs == {}, (
-            "Found bare model.summary() calls:\n"
-            + "\n".join(
-                f"  {name}:\n" + "\n".join(f"    L{n}: {l}" for n, l in refs)
-                for name, refs in all_refs.items()
-            )
+        assert all_refs == {}, 'Found bare model.summary() calls:\n' + '\n'.join(
+            f'  {name}:\n' + '\n'.join(f'    L{n}: {l}' for n, l in refs) for name, refs in all_refs.items()
         )

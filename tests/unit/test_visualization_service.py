@@ -1,8 +1,9 @@
 """Unit tests for ntpn.visualization_service module."""
 
-import pytest
-import numpy as np
 from unittest.mock import MagicMock, patch
+
+import numpy as np
+import pytest
 import streamlit as st
 
 from ntpn.state_manager import StateManager
@@ -45,6 +46,7 @@ class TestGenerateCriticalSets:
         )
 
         from ntpn.visualization_service import generate_critical_sets
+
         generate_critical_sets(num_classes, num_samples, state=state)
 
         assert state.viz.cs_lists is not None
@@ -66,6 +68,7 @@ class TestGenerateCriticalSets:
         mock_pn.generate_critical.return_value = (np.random.randn(10, 11, 32), 5.0)
 
         from ntpn.visualization_service import generate_critical_sets
+
         generate_critical_sets(1, 10, state=state)
 
         call_args = mock_pn.predict_critical.call_args
@@ -92,6 +95,7 @@ class TestCsDownsamplePCA:
         mock_dp.select_samples_cs.return_value = (selected_cs, selected_trajs)
 
         from ntpn.visualization_service import cs_downsample_PCA
+
         result_cs, result_trajs = cs_downsample_PCA(0, 5, dims=3, state=state)
 
         assert result_cs is selected_cs
@@ -108,6 +112,7 @@ class TestDrawCsPlots:
         mock_plot_pca.return_value = mock_fig
 
         from ntpn.visualization_service import draw_cs_plots
+
         draw_cs_plots('PCA', 5, 3, 2, state=state)
 
         assert mock_plot_pca.call_count == 2
@@ -121,6 +126,7 @@ class TestDrawCsPlots:
         mock_plot_umap.return_value = mock_fig
 
         from ntpn.visualization_service import draw_cs_plots
+
         draw_cs_plots('UMAP', 5, 3, 3, state=state)
 
         assert mock_plot_umap.call_count == 3
@@ -132,12 +138,15 @@ class TestStubFunctions:
 
     def test_cs_cca_alignment_callable(self, state):
         from ntpn.visualization_service import cs_CCA_alignment
+
         cs_CCA_alignment(state=state)
 
     def test_plot_trajectories_umap_callable(self, state):
         from ntpn.visualization_service import plot_trajectories_UMAP
+
         plot_trajectories_UMAP(state=state)
 
     def test_plot_critical_sets_grid_callable(self, state):
         from ntpn.visualization_service import plot_critical_sets_grid
+
         plot_critical_sets_grid(state=state)

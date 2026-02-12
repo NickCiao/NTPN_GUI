@@ -1,15 +1,15 @@
 """Unit tests for StateManager."""
 
-import pytest
 from unittest.mock import MagicMock
+
 import numpy as np
+import pytest
 
 # Import streamlit and set up test mode
 import streamlit as st
-from streamlit.testing.v1 import AppTest
 
 # Import after streamlit is ready
-from ntpn.state_manager import StateManager, DataState, ModelState, VisualizationState, UIState
+from ntpn.state_manager import StateManager
 
 
 @pytest.fixture(autouse=True)
@@ -29,6 +29,7 @@ def state_manager():
     """Create StateManager instance."""
     # Reset singleton
     import ntpn.state_manager
+
     ntpn.state_manager._state_manager_instance = None
     return StateManager()
 
@@ -38,7 +39,7 @@ class TestDataState:
 
     def test_data_state_initial(self, state_manager):
         """Test initial DataState."""
-        assert state_manager.data.dataset_name == "demo_data"
+        assert state_manager.data.dataset_name == 'demo_data'
         assert state_manager.data.dataset is None
         assert state_manager.data.labels is None
 
@@ -136,7 +137,7 @@ class TestUIState:
 
     def test_ui_state_initial(self, state_manager):
         """Test initial UIState."""
-        assert state_manager.ui.current_page == "import_and_load"
+        assert state_manager.ui.current_page == 'import_and_load'
         assert not state_manager.ui.show_advanced_options
         assert not state_manager.ui.debug_mode
 
@@ -199,7 +200,7 @@ class TestStateManager:
         assert 'ui' in summary
 
         assert summary['data']['loaded'] is False
-        assert summary['data']['dataset_name'] == "demo_data"
+        assert summary['data']['dataset_name'] == 'demo_data'
         assert summary['model']['batch_size'] == 8
 
     def test_reset_state(self, state_manager):
@@ -225,7 +226,7 @@ class TestStateManager:
         test_labels = [np.array([0])]
         state_manager.data.dataset = test_data
         state_manager.data.labels = test_labels
-        state_manager.data.dataset_name = "test_data"
+        state_manager.data.dataset_name = 'test_data'
         state_manager.model.ntpn_model = MagicMock()
         state_manager.viz.cs_lists = [[np.array([1])]]
 
@@ -235,7 +236,7 @@ class TestStateManager:
         # Data should be preserved
         assert state_manager.data.dataset == test_data
         assert state_manager.data.labels == test_labels
-        assert state_manager.data.dataset_name == "test_data"
+        assert state_manager.data.dataset_name == 'test_data'
 
         # Other state should be reset
         assert state_manager.model.ntpn_model is None
@@ -245,9 +246,9 @@ class TestStateManager:
         """Test __repr__() method."""
         repr_str = repr(state_manager)
 
-        assert "StateManager" in repr_str
-        assert "data_loaded" in repr_str
-        assert "model_ready" in repr_str
+        assert 'StateManager' in repr_str
+        assert 'data_loaded' in repr_str
+        assert 'model_ready' in repr_str
 
 
 class TestGetStateManager:
@@ -255,10 +256,10 @@ class TestGetStateManager:
 
     def test_get_state_manager_singleton(self):
         """Test that get_state_manager() returns singleton."""
-        from ntpn.state_manager import get_state_manager
-
         # Reset singleton first
         import ntpn.state_manager
+        from ntpn.state_manager import get_state_manager
+
         ntpn.state_manager._state_manager_instance = None
 
         # Get instance twice
@@ -272,6 +273,7 @@ class TestGetStateManager:
         """Test that get_state_manager() creates instance."""
         # Reset singleton
         import ntpn.state_manager
+
         ntpn.state_manager._state_manager_instance = None
 
         from ntpn.state_manager import get_state_manager
@@ -287,17 +289,18 @@ def test_state_persistence():
     """Test that state persists across StateManager instances."""
     # Create first instance and set data
     sm1 = StateManager()
-    sm1.data.dataset_name = "test_dataset"
+    sm1.data.dataset_name = 'test_dataset'
     sm1.model.batch_size = 16
 
     # Create second instance (simulating new execution)
     # Reset singleton but keep session_state
     import ntpn.state_manager
+
     ntpn.state_manager._state_manager_instance = None
     sm2 = StateManager()
 
     # State should persist through session_state
-    assert sm2.data.dataset_name == "test_dataset"
+    assert sm2.data.dataset_name == 'test_dataset'
     assert sm2.model.batch_size == 16
 
 
@@ -311,7 +314,7 @@ class TestLegacySync:
         test_labels = [np.array([0, 1])]
         state_manager.data.dataset = test_data
         state_manager.data.labels = test_labels
-        state_manager.data.dataset_name = "test_data"
+        state_manager.data.dataset_name = 'test_data'
 
         # Sync to legacy
         state_manager.sync_to_legacy()
@@ -319,7 +322,7 @@ class TestLegacySync:
         # Check legacy keys exist
         assert st.session_state['dataset'] == test_data
         assert st.session_state['labels'] == test_labels
-        assert st.session_state['dataset_name'] == "test_data"
+        assert st.session_state['dataset_name'] == 'test_data'
 
     def test_sync_to_legacy_model_keys(self, state_manager):
         """Test syncing model state to legacy session_state keys."""
@@ -355,7 +358,7 @@ class TestLegacySync:
         test_labels = [np.array([0, 1])]
         st.session_state['dataset'] = test_data
         st.session_state['labels'] = test_labels
-        st.session_state['dataset_name'] = "legacy_data"
+        st.session_state['dataset_name'] = 'legacy_data'
 
         # Sync from legacy
         state_manager.sync_from_legacy()
@@ -363,7 +366,7 @@ class TestLegacySync:
         # Check StateManager has the data
         assert state_manager.data.dataset == test_data
         assert state_manager.data.labels == test_labels
-        assert state_manager.data.dataset_name == "legacy_data"
+        assert state_manager.data.dataset_name == 'legacy_data'
 
     def test_sync_from_legacy_model_keys(self, state_manager):
         """Test syncing model data from legacy session_state."""
@@ -383,14 +386,14 @@ class TestLegacySync:
     def test_sync_from_legacy_partial_keys(self, state_manager):
         """Test syncing when only some legacy keys exist."""
         # Set only some legacy keys
-        st.session_state['dataset_name'] = "partial_data"
+        st.session_state['dataset_name'] = 'partial_data'
         st.session_state['batch_size'] = 64
 
         # Sync from legacy
         state_manager.sync_from_legacy()
 
         # Check only those keys were synced
-        assert state_manager.data.dataset_name == "partial_data"
+        assert state_manager.data.dataset_name == 'partial_data'
         assert state_manager.model.batch_size == 64
 
         # Others should have defaults
@@ -400,18 +403,18 @@ class TestLegacySync:
     def test_bidirectional_sync(self, state_manager):
         """Test bidirectional synchronization."""
         # Set legacy keys
-        st.session_state['dataset_name'] = "original"
+        st.session_state['dataset_name'] = 'original'
 
         # Sync from legacy
         state_manager.sync_from_legacy()
-        assert state_manager.data.dataset_name == "original"
+        assert state_manager.data.dataset_name == 'original'
 
         # Modify via StateManager
-        state_manager.data.dataset_name = "modified"
+        state_manager.data.dataset_name = 'modified'
 
         # Sync to legacy
         state_manager.sync_to_legacy()
-        assert st.session_state['dataset_name'] == "modified"
+        assert st.session_state['dataset_name'] == 'modified'
 
     def test_sync_to_legacy_new_data_fields(self, state_manager):
         """Test syncing new tsf_samples field to legacy."""
@@ -433,7 +436,7 @@ class TestLegacySync:
 
     def test_sync_to_legacy_new_model_fields(self, state_manager):
         """Test syncing new model fields to legacy."""
-        state_manager.model.model_name = "test_model"
+        state_manager.model.model_name = 'test_model'
         state_manager.model.loss_fn = MagicMock()
         state_manager.model.optimizer = MagicMock()
         state_manager.model.train_metric = MagicMock()
@@ -441,7 +444,7 @@ class TestLegacySync:
 
         state_manager.sync_to_legacy()
 
-        assert st.session_state['model_name'] == "test_model"
+        assert st.session_state['model_name'] == 'test_model'
         assert st.session_state['loss_fn'] is state_manager.model.loss_fn
         assert st.session_state['optimizer'] is state_manager.model.optimizer
         assert st.session_state['train_metric'] is state_manager.model.train_metric
@@ -451,7 +454,7 @@ class TestLegacySync:
         """Test syncing new model fields from legacy."""
         mock_loss = MagicMock()
         mock_opt = MagicMock()
-        st.session_state['model_name'] = "legacy_model"
+        st.session_state['model_name'] = 'legacy_model'
         st.session_state['loss_fn'] = mock_loss
         st.session_state['optimizer'] = mock_opt
         st.session_state['train_metric'] = MagicMock()
@@ -459,7 +462,7 @@ class TestLegacySync:
 
         state_manager.sync_from_legacy()
 
-        assert state_manager.model.model_name == "legacy_model"
+        assert state_manager.model.model_name == 'legacy_model'
         assert state_manager.model.loss_fn is mock_loss
         assert state_manager.model.optimizer is mock_opt
 
@@ -514,7 +517,7 @@ class TestNewModelStateFields:
 
     def test_model_name_default(self, state_manager):
         """Test model_name defaults to expected value."""
-        assert state_manager.model.model_name == "No model loaded"
+        assert state_manager.model.model_name == 'No model loaded'
 
     def test_training_infrastructure_defaults(self, state_manager):
         """Test training infrastructure fields default to None."""
@@ -594,7 +597,7 @@ class TestUpdatedStateSummary:
         """Test summary includes model_name."""
         summary = state_manager.get_state_summary()
         assert 'model_name' in summary['model']
-        assert summary['model']['model_name'] == "No model loaded"
+        assert summary['model']['model_name'] == 'No model loaded'
 
     def test_summary_includes_training_infrastructure(self, state_manager):
         """Test summary includes has_training_infrastructure."""

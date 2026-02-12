@@ -10,7 +10,6 @@ import pytest
 
 from ntpn.point_net import point_net, point_net_segment
 
-
 NUM_POINTS = 8
 NUM_CLASSES = 2
 UNITS = 4
@@ -19,7 +18,6 @@ DIMS = 3
 
 @pytest.mark.integration
 class TestPointNetPipeline:
-
     def test_build_compile_and_call(self):
         """Test point_net model builds, compiles, and produces valid output."""
         np.random.seed(42)
@@ -41,7 +39,6 @@ class TestPointNetPipeline:
 
 @pytest.mark.integration
 class TestPointNetSegmentPipeline:
-
     def test_build_and_call(self):
         """Test segment model builds and produces valid output."""
         np.random.seed(42)
