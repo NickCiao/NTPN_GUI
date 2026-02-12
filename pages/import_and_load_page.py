@@ -121,8 +121,7 @@ def dataset_details_import_model():
     st.sidebar.write('Import a Model from a file')
 
     # main section
-    # Note: model_name not yet in StateManager, using legacy key
-    model_name = st.session_state.get('model_name', 'No model loaded')
+    model_name = state.model.model_name
     st.write('# Current Model: ', model_name)
     st.write("---")
     

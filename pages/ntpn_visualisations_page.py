@@ -87,10 +87,10 @@ def plotting():
     #bottom_clustering_display = st.sidebar.selectbox(label='Bottom Display', key='bottom_clustering_display', options=display_options, index=2)
     #st.session_state.bottom_clustering_display_options = st.empty()
     
-    if not st.session_state.cs_ub_plots:
+    if not state.viz.cs_ub_plots:
         st.warning('Generate a Plot')
     else:
-        for fig in st.session_state.cs_ub_plots:
+        for fig in state.viz.cs_ub_plots:
             st.pyplot(fig)
     
     

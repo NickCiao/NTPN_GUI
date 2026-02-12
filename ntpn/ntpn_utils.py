@@ -153,8 +153,10 @@ def samples_transform(transform_radio: str, state: Optional[StateManager] = None
     else:
         X_tsf = state.data.select_samples
 
-    # Store transformed samples (using legacy key for now)
-    st.session_state.tsf_samples = X_tsf
+    state.data.tsf_samples = X_tsf
+
+    # Sync to legacy
+    state.sync_to_legacy()
 
     return
 
@@ -171,8 +173,7 @@ def create_trajectories(trajectories_window_size: int, trajectories_window_strid
     if state is None:
         state = get_state_manager()
 
-    # Get transformed samples from legacy key (tsf_samples not yet in StateManager)
-    tsf_samples = st.session_state.tsf_samples
+    tsf_samples = state.data.tsf_samples
 
     # Project into 3D via sliding windows
     X_sw_list, Y_sw_list = point_net_utils.window_projection(tsf_samples, state.data.select_labels, state.data.select_indices, window_size=trajectories_window_size, stride=trajectories_window_stride)
@@ -256,11 +257,10 @@ def compile_model(loss: str = 'sparse_categorical_crossentropy', learning_rate: 
     state.model.learning_rate = learning_rate
 
     if view:
-        # Store training objects in legacy session_state (not yet in StateManager)
-        st.session_state.loss_fn = keras.losses.SparseCategoricalCrossentropy()
-        st.session_state.train_metric = keras.metrics.SparseCategoricalAccuracy()
-        st.session_state.test_metric = keras.metrics.SparseCategoricalAccuracy()
-        st.session_state.optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
+        state.model.loss_fn = keras.losses.SparseCategoricalCrossentropy()
+        state.model.train_metric = keras.metrics.SparseCategoricalAccuracy()
+        state.model.test_metric = keras.metrics.SparseCategoricalAccuracy()
+        state.model.optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
 
     state.model.ntpn_model.compile(loss=loss, optimizer=keras.optimizers.Adam(learning_rate=learning_rate), metrics=[metric])
 
@@ -307,7 +307,7 @@ def train_for_streamlit(epochs: int, state: Optional[StateManager] = None) -> No
 
             # number of steps to log
             if step % 1 == 0:
-                step_acc = float(st.session_state.train_metric.result())
+                step_acc = float(state.model.train_metric.result())
                 percent_complete = ((step/(len(state.data.sub_samples)//state.model.batch_size)))
                 progress_bar.progress(percent_complete)
                 st_t.write('Duration : {0:.2f}s, Training Acc : {1:.4f}'.format((epoch_time), float(step_acc)))
@@ -315,9 +315,9 @@ def train_for_streamlit(epochs: int, state: Optional[StateManager] = None) -> No
         progress_bar.progress(1.0)
 
         # Metrics for the end of each epoch
-        train_acc = st.session_state.train_metric.result()
+        train_acc = state.model.train_metric.result()
         # reset training metric at the end of each epoch
-        st.session_state.train_metric.reset_state()
+        state.model.train_metric.reset_state()
 
         train_loss = round((sum(train_loss_list)/len(train_loss_list)), 5)
 
@@ -328,8 +328,8 @@ def train_for_streamlit(epochs: int, state: Optional[StateManager] = None) -> No
 
         val_loss = round((sum(val_loss_list)/len(val_loss_list)), 5)
 
-        val_acc = st.session_state.test_metric.result()
-        st.session_state.test_metric.reset_state()
+        val_acc = state.model.test_metric.result()
+        state.model.test_metric.reset_state()
 
         st_t.write('Duration : {0:.2f}s, Training Acc : {1:.4f}, Validation Acc : {2:.4f}'.format((time.time() - start_time), float(train_acc), float(val_acc)))
 
@@ -376,7 +376,7 @@ def train_step(x: Any, y: Any, state: Optional[StateManager] = None) -> tf.Tenso
     model = state.model.ntpn_model
     with tf.GradientTape() as tape:
         predictions = model(x, training=True)
-        loss_value = st.session_state.loss_fn(y, predictions)
+        loss_value = state.model.loss_fn(y, predictions)
 
     # calculate gradients
     grads = tape.gradient(loss_value, model.trainable_weights)
@@ -388,7 +388,7 @@ def train_step(x: Any, y: Any, state: Optional[StateManager] = None) -> tf.Tenso
             metric.update_state(loss_value)
         else:
             metric.update_state(y, predictions)
-    st.session_state.train_metric.update_state(y, predictions)
+    state.model.train_metric.update_state(y, predictions)
     return loss_value
 
 
@@ -407,8 +407,8 @@ def test_step(x: Any, y: Any, state: Optional[StateManager] = None) -> tf.Tensor
         state = get_state_manager()
 
     val_predictions = state.model.ntpn_model(x, training=False)
-    st.session_state.test_metric.update_state(y, val_predictions)
-    return st.session_state.loss_fn(y, val_predictions)
+    state.model.test_metric.update_state(y, val_predictions)
+    return state.model.loss_fn(y, val_predictions)
 
 
 
@@ -459,11 +459,9 @@ def generate_critical_sets(num_classes: int, num_samples: int, state: Optional[S
 
     # Store in StateManager
     state.viz.cs_lists = cs_lists
-
-    # Store additional data in legacy session_state (not yet in StateManager)
-    st.session_state.cs_trajectories = cs_trajectories
-    st.session_state.cs_predictions = cs_predictions
-    st.session_state.cs_means = cs_means
+    state.viz.cs_trajectories = cs_trajectories
+    state.viz.cs_predictions = cs_predictions
+    state.viz.cs_means = cs_means
 
     # Sync to legacy
     state.sync_to_legacy()
@@ -487,9 +485,7 @@ def cs_downsample_PCA(label: int, num_examples: int, dims: int = 3, state: Optio
     if state is None:
         state = get_state_manager()
 
-    cs_trajectories = st.session_state.cs_trajectories  # Not yet in StateManager
-
-    pca_cs, pca_trajs = point_net_utils.pca_cs_windowed(state.viz.cs_lists[label], cs_trajectories[label], dims=dims)
+    pca_cs, pca_trajs = point_net_utils.pca_cs_windowed(state.viz.cs_lists[label], state.viz.cs_trajectories[label], dims=dims)
 
     pca_css, pca_trajss = point_net_utils.select_samples_cs(pca_cs, pca_trajs, num_examples)
 
@@ -511,9 +507,7 @@ def cs_downsample_UMAP(label: int, num_examples: int, dims: int = 3, state: Opti
     if state is None:
         state = get_state_manager()
 
-    cs_trajectories = st.session_state.cs_trajectories  # Not yet in StateManager
-
-    umap_cs, umap_trajs = point_net_utils.umap_cs_windowed(state.viz.cs_lists[label], cs_trajectories[label], dims=dims)
+    umap_cs, umap_trajs = point_net_utils.umap_cs_windowed(state.viz.cs_lists[label], state.viz.cs_trajectories[label], dims=dims)
 
     umap_css, umap_trajss = point_net_utils.select_samples_cs(umap_cs, umap_trajs, num_examples)
 
@@ -641,7 +635,10 @@ def draw_cs_plots(plotting_algo: str, num_examples: int, dims: int, num_classes:
             fig = plot_critical_sets_UMAP(i, num_examples, dims, state=state)
             figs.append(fig)
 
-    st.session_state.cs_ub_plots = figs
+    state.viz.cs_ub_plots = figs
+
+    # Sync to legacy
+    state.sync_to_legacy()
 
     return
 

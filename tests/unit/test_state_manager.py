@@ -412,3 +412,200 @@ class TestLegacySync:
         # Sync to legacy
         state_manager.sync_to_legacy()
         assert st.session_state['dataset_name'] == "modified"
+
+    def test_sync_to_legacy_new_data_fields(self, state_manager):
+        """Test syncing new tsf_samples field to legacy."""
+        test_tsf = [np.array([[1, 2]])]
+        state_manager.data.tsf_samples = test_tsf
+
+        state_manager.sync_to_legacy()
+
+        assert st.session_state['tsf_samples'] == test_tsf
+
+    def test_sync_from_legacy_new_data_fields(self, state_manager):
+        """Test syncing tsf_samples from legacy."""
+        test_tsf = [np.array([[3, 4]])]
+        st.session_state['tsf_samples'] = test_tsf
+
+        state_manager.sync_from_legacy()
+
+        assert state_manager.data.tsf_samples == test_tsf
+
+    def test_sync_to_legacy_new_model_fields(self, state_manager):
+        """Test syncing new model fields to legacy."""
+        state_manager.model.model_name = "test_model"
+        state_manager.model.loss_fn = MagicMock()
+        state_manager.model.optimizer = MagicMock()
+        state_manager.model.train_metric = MagicMock()
+        state_manager.model.test_metric = MagicMock()
+
+        state_manager.sync_to_legacy()
+
+        assert st.session_state['model_name'] == "test_model"
+        assert st.session_state['loss_fn'] is state_manager.model.loss_fn
+        assert st.session_state['optimizer'] is state_manager.model.optimizer
+        assert st.session_state['train_metric'] is state_manager.model.train_metric
+        assert st.session_state['test_metric'] is state_manager.model.test_metric
+
+    def test_sync_from_legacy_new_model_fields(self, state_manager):
+        """Test syncing new model fields from legacy."""
+        mock_loss = MagicMock()
+        mock_opt = MagicMock()
+        st.session_state['model_name'] = "legacy_model"
+        st.session_state['loss_fn'] = mock_loss
+        st.session_state['optimizer'] = mock_opt
+        st.session_state['train_metric'] = MagicMock()
+        st.session_state['test_metric'] = MagicMock()
+
+        state_manager.sync_from_legacy()
+
+        assert state_manager.model.model_name == "legacy_model"
+        assert state_manager.model.loss_fn is mock_loss
+        assert state_manager.model.optimizer is mock_opt
+
+    def test_sync_to_legacy_new_viz_fields(self, state_manager):
+        """Test syncing new viz fields to legacy."""
+        state_manager.viz.cs_trajectories = [MagicMock()]
+        state_manager.viz.cs_predictions = [MagicMock()]
+        state_manager.viz.cs_means = [MagicMock()]
+        state_manager.viz.cs_ub_plots = [MagicMock()]
+
+        state_manager.sync_to_legacy()
+
+        assert st.session_state['cs_trajectories'] is state_manager.viz.cs_trajectories
+        assert st.session_state['cs_predictions'] is state_manager.viz.cs_predictions
+        assert st.session_state['cs_means'] is state_manager.viz.cs_means
+        assert st.session_state['cs_ub_plots'] is state_manager.viz.cs_ub_plots
+
+    def test_sync_from_legacy_new_viz_fields(self, state_manager):
+        """Test syncing new viz fields from legacy."""
+        mock_trajs = [MagicMock()]
+        mock_plots = [MagicMock()]
+        st.session_state['cs_trajectories'] = mock_trajs
+        st.session_state['cs_predictions'] = [MagicMock()]
+        st.session_state['cs_means'] = [MagicMock()]
+        st.session_state['cs_ub_plots'] = mock_plots
+
+        state_manager.sync_from_legacy()
+
+        assert state_manager.viz.cs_trajectories is mock_trajs
+        assert state_manager.viz.cs_ub_plots is mock_plots
+
+
+class TestNewDataStateFields:
+    """Tests for new DataState fields and methods."""
+
+    def test_tsf_samples_default(self, state_manager):
+        """Test tsf_samples defaults to None."""
+        assert state_manager.data.tsf_samples is None
+
+    def test_is_transformed_false(self, state_manager):
+        """Test is_transformed() returns False initially."""
+        assert not state_manager.data.is_transformed()
+
+    def test_is_transformed_true(self, state_manager):
+        """Test is_transformed() returns True when set."""
+        state_manager.data.tsf_samples = [np.array([[1, 2]])]
+        assert state_manager.data.is_transformed()
+
+
+class TestNewModelStateFields:
+    """Tests for new ModelState fields and methods."""
+
+    def test_model_name_default(self, state_manager):
+        """Test model_name defaults to expected value."""
+        assert state_manager.model.model_name == "No model loaded"
+
+    def test_training_infrastructure_defaults(self, state_manager):
+        """Test training infrastructure fields default to None."""
+        assert state_manager.model.loss_fn is None
+        assert state_manager.model.optimizer is None
+        assert state_manager.model.train_metric is None
+        assert state_manager.model.test_metric is None
+
+    def test_has_training_infrastructure_false(self, state_manager):
+        """Test has_training_infrastructure() returns False initially."""
+        assert not state_manager.model.has_training_infrastructure()
+
+    def test_has_training_infrastructure_partial(self, state_manager):
+        """Test has_training_infrastructure() with partial setup."""
+        state_manager.model.loss_fn = MagicMock()
+        state_manager.model.optimizer = MagicMock()
+        assert not state_manager.model.has_training_infrastructure()
+
+    def test_has_training_infrastructure_true(self, state_manager):
+        """Test has_training_infrastructure() returns True when fully set."""
+        state_manager.model.loss_fn = MagicMock()
+        state_manager.model.optimizer = MagicMock()
+        state_manager.model.train_metric = MagicMock()
+        state_manager.model.test_metric = MagicMock()
+        assert state_manager.model.has_training_infrastructure()
+
+
+class TestNewVisualizationStateFields:
+    """Tests for new VisualizationState fields and methods."""
+
+    def test_cs_intermediates_defaults(self, state_manager):
+        """Test cs intermediate fields default to None."""
+        assert state_manager.viz.cs_trajectories is None
+        assert state_manager.viz.cs_predictions is None
+        assert state_manager.viz.cs_means is None
+
+    def test_cs_ub_plots_default(self, state_manager):
+        """Test cs_ub_plots defaults to None."""
+        assert state_manager.viz.cs_ub_plots is None
+
+    def test_has_cs_intermediates_false(self, state_manager):
+        """Test has_cs_intermediates() returns False initially."""
+        assert not state_manager.viz.has_cs_intermediates()
+
+    def test_has_cs_intermediates_partial(self, state_manager):
+        """Test has_cs_intermediates() with partial data."""
+        state_manager.viz.cs_trajectories = [MagicMock()]
+        assert not state_manager.viz.has_cs_intermediates()
+
+    def test_has_cs_intermediates_true(self, state_manager):
+        """Test has_cs_intermediates() returns True when fully set."""
+        state_manager.viz.cs_trajectories = [MagicMock()]
+        state_manager.viz.cs_predictions = [MagicMock()]
+        state_manager.viz.cs_means = [MagicMock()]
+        assert state_manager.viz.has_cs_intermediates()
+
+    def test_has_plots_false(self, state_manager):
+        """Test has_plots() returns False initially."""
+        assert not state_manager.viz.has_plots()
+
+    def test_has_plots_true(self, state_manager):
+        """Test has_plots() returns True when set."""
+        state_manager.viz.cs_ub_plots = [MagicMock()]
+        assert state_manager.viz.has_plots()
+
+
+class TestUpdatedStateSummary:
+    """Tests for updated get_state_summary()."""
+
+    def test_summary_includes_transformed(self, state_manager):
+        """Test summary includes transformed status."""
+        summary = state_manager.get_state_summary()
+        assert 'transformed' in summary['data']
+        assert summary['data']['transformed'] is False
+
+    def test_summary_includes_model_name(self, state_manager):
+        """Test summary includes model_name."""
+        summary = state_manager.get_state_summary()
+        assert 'model_name' in summary['model']
+        assert summary['model']['model_name'] == "No model loaded"
+
+    def test_summary_includes_training_infrastructure(self, state_manager):
+        """Test summary includes has_training_infrastructure."""
+        summary = state_manager.get_state_summary()
+        assert 'has_training_infrastructure' in summary['model']
+        assert summary['model']['has_training_infrastructure'] is False
+
+    def test_summary_includes_viz_intermediates(self, state_manager):
+        """Test summary includes viz intermediate statuses."""
+        summary = state_manager.get_state_summary()
+        assert 'has_cs_intermediates' in summary['viz']
+        assert 'has_plots' in summary['viz']
+        assert summary['viz']['has_cs_intermediates'] is False
+        assert summary['viz']['has_plots'] is False

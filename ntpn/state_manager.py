@@ -43,6 +43,9 @@ class DataState:
     select_indices: Optional[List[int]] = None
     select_labels: Optional[List[npt.NDArray]] = None
 
+    # Transformed samples (intermediate between transform and trajectory creation)
+    tsf_samples: Optional[List[npt.NDArray]] = None
+
     # Subsampled data
     sub_samples: Optional[List[npt.NDArray]] = None
     sub_indices: Optional[List[int]] = None
@@ -60,6 +63,10 @@ class DataState:
         """Check if data is subsampled."""
         return self.sub_samples is not None and self.sub_labels is not None
 
+    def is_transformed(self) -> bool:
+        """Check if samples have been transformed."""
+        return self.tsf_samples is not None
+
 
 @dataclass
 class ModelState:
@@ -67,6 +74,7 @@ class ModelState:
 
     # Model
     ntpn_model: Optional[keras.Model] = None
+    model_name: str = "No model loaded"
 
     # Training data
     train_tensors: Optional[Any] = None
@@ -75,6 +83,12 @@ class ModelState:
     # Training configuration
     batch_size: int = 8
     learning_rate: float = 0.02
+
+    # Training infrastructure (Keras objects for Streamlit training loop)
+    loss_fn: Optional[Any] = None
+    optimizer: Optional[Any] = None
+    train_metric: Optional[Any] = None
+    test_metric: Optional[Any] = None
 
     # Training metrics
     train_loss: List[float] = field(default_factory=list)
@@ -94,6 +108,11 @@ class ModelState:
         """Check if model can be trained."""
         return self.has_model() and self.has_training_data()
 
+    def has_training_infrastructure(self) -> bool:
+        """Check if training infrastructure (loss, optimizer, metrics) is set up."""
+        return (self.loss_fn is not None and self.optimizer is not None and
+                self.train_metric is not None and self.test_metric is not None)
+
 
 @dataclass
 class VisualizationState:
@@ -104,6 +123,14 @@ class VisualizationState:
     cs_pca: Optional[List] = None
     cs_umap: Optional[List] = None
     cs_cca_aligned: Optional[List] = None
+
+    # Critical set intermediates
+    cs_trajectories: Optional[List] = None
+    cs_predictions: Optional[List] = None
+    cs_means: Optional[List] = None
+
+    # Plot outputs
+    cs_ub_plots: Optional[List] = None
 
     # Upper bounds
     upper_lists: Optional[List] = None
@@ -117,6 +144,16 @@ class VisualizationState:
     def has_critical_sets(self) -> bool:
         """Check if critical sets are generated."""
         return self.cs_lists is not None
+
+    def has_cs_intermediates(self) -> bool:
+        """Check if critical set intermediates are available."""
+        return (self.cs_trajectories is not None and
+                self.cs_predictions is not None and
+                self.cs_means is not None)
+
+    def has_plots(self) -> bool:
+        """Check if plot outputs are available."""
+        return self.cs_ub_plots is not None
 
 
 @dataclass
@@ -242,6 +279,7 @@ class StateManager:
             'select_samples': 'select_samples',
             'select_indices': 'select_indices',
             'select_labels': 'select_labels',
+            'tsf_samples': 'tsf_samples',
             'sub_samples': 'sub_samples',
             'sub_indices': 'sub_indices',
             'sub_labels': 'sub_labels',
@@ -254,10 +292,15 @@ class StateManager:
         # Model state keys
         legacy_model_keys = {
             'ntpn_model': 'ntpn_model',
+            'model_name': 'model_name',
             'train_tensors': 'train_tensors',
             'test_tensors': 'test_tensors',
             'batch_size': 'batch_size',
             'learning_rate': 'learning_rate',
+            'loss_fn': 'loss_fn',
+            'optimizer': 'optimizer',
+            'train_metric': 'train_metric',
+            'test_metric': 'test_metric',
             'train_loss': 'train_loss',
             'train_accuracy': 'train_accuracy',
             'test_loss': 'test_loss',
@@ -274,6 +317,10 @@ class StateManager:
             'cs_pca': 'cs_pca',
             'cs_umap': 'cs_umap',
             'cs_cca_aligned': 'cs_cca_aligned',
+            'cs_trajectories': 'cs_trajectories',
+            'cs_predictions': 'cs_predictions',
+            'cs_means': 'cs_means',
+            'cs_ub_plots': 'cs_ub_plots',
             'upper_lists': 'upper_lists',
             'num_critical_samples': 'num_critical_samples',
             'pca_dimensions': 'pca_dimensions',
@@ -312,16 +359,22 @@ class StateManager:
         st.session_state['select_samples'] = self.data.select_samples
         st.session_state['select_indices'] = self.data.select_indices
         st.session_state['select_labels'] = self.data.select_labels
+        st.session_state['tsf_samples'] = self.data.tsf_samples
         st.session_state['sub_samples'] = self.data.sub_samples
         st.session_state['sub_indices'] = self.data.sub_indices
         st.session_state['sub_labels'] = self.data.sub_labels
 
         # Model state
         st.session_state['ntpn_model'] = self.model.ntpn_model
+        st.session_state['model_name'] = self.model.model_name
         st.session_state['train_tensors'] = self.model.train_tensors
         st.session_state['test_tensors'] = self.model.test_tensors
         st.session_state['batch_size'] = self.model.batch_size
         st.session_state['learning_rate'] = self.model.learning_rate
+        st.session_state['loss_fn'] = self.model.loss_fn
+        st.session_state['optimizer'] = self.model.optimizer
+        st.session_state['train_metric'] = self.model.train_metric
+        st.session_state['test_metric'] = self.model.test_metric
         st.session_state['train_loss'] = self.model.train_loss
         st.session_state['train_accuracy'] = self.model.train_accuracy
         st.session_state['test_loss'] = self.model.test_loss
@@ -332,6 +385,10 @@ class StateManager:
         st.session_state['cs_pca'] = self.viz.cs_pca
         st.session_state['cs_umap'] = self.viz.cs_umap
         st.session_state['cs_cca_aligned'] = self.viz.cs_cca_aligned
+        st.session_state['cs_trajectories'] = self.viz.cs_trajectories
+        st.session_state['cs_predictions'] = self.viz.cs_predictions
+        st.session_state['cs_means'] = self.viz.cs_means
+        st.session_state['cs_ub_plots'] = self.viz.cs_ub_plots
         st.session_state['upper_lists'] = self.viz.upper_lists
         st.session_state['num_critical_samples'] = self.viz.num_critical_samples
         st.session_state['pca_dimensions'] = self.viz.pca_dimensions
@@ -358,17 +415,22 @@ class StateManager:
             'data': {
                 'loaded': self.data.is_loaded(),
                 'selected': self.data.is_selected(),
+                'transformed': self.data.is_transformed(),
                 'subsampled': self.data.is_subsampled(),
                 'dataset_name': self.data.dataset_name,
             },
             'model': {
                 'has_model': self.model.has_model(),
+                'model_name': self.model.model_name,
                 'has_training_data': self.model.has_training_data(),
+                'has_training_infrastructure': self.model.has_training_infrastructure(),
                 'can_train': self.model.can_train(),
                 'batch_size': self.model.batch_size,
             },
             'viz': {
                 'has_critical_sets': self.viz.has_critical_sets(),
+                'has_cs_intermediates': self.viz.has_cs_intermediates(),
+                'has_plots': self.viz.has_plots(),
                 'num_samples': self.viz.num_critical_samples,
             },
             'ui': {
