@@ -25,15 +25,18 @@ See `DOCKER.md` for detailed Docker instructions.
 
 ### Running Locally
 
+This project uses [uv](https://docs.astral.sh/uv/) for dependency and
+environment management.
+
 ```bash
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies into a managed .venv from uv.lock
+uv sync
 
 # Run the Streamlit GUI
-streamlit run NTPN_APP.py
+uv run streamlit run NTPN_APP.py
 
 # Run with specific port
-streamlit run NTPN_APP.py --server.port 8501
+uv run streamlit run NTPN_APP.py --server.port 8501
 ```
 
 ## Architecture
@@ -167,18 +170,18 @@ state.model.ntpn_model
 
 ```bash
 # Run all tests
-pytest tests/ -v
+uv run pytest tests/ -v
 
 # Run with coverage
-pytest tests/ --cov=ntpn --cov-report=html
+uv run pytest tests/ --cov=ntpn --cov-report=html
 
 # Run specific test categories
-pytest tests/unit/ -v
-pytest tests/integration/ -v
-pytest tests/regression/ -v
+uv run pytest tests/unit/ -v
+uv run pytest tests/integration/ -v
+uv run pytest tests/regression/ -v
 
 # Skip slow tests (UMAP-based)
-pytest tests/ -v -m "not slow"
+uv run pytest tests/ -v -m "not slow"
 ```
 
 **Current stats:** 331 tests, 89.3% coverage
@@ -187,17 +190,19 @@ pytest tests/ -v -m "not slow"
 
 ```bash
 # Lint (auto-fix where possible)
-ruff check --fix ntpn/ pages/ tests/
+uv run ruff check --fix ntpn/ pages/ tests/
 
 # Format
-ruff format ntpn/ pages/ tests/
+uv run ruff format ntpn/ pages/ tests/
 ```
 
 Configuration in `pyproject.toml`: Python 3.11+, 120 char lines, single quotes.
 
 ## Dependencies
 
-See `requirements.txt` for full list. Key libraries:
+Dependencies are declared in `pyproject.toml` (runtime deps under
+`[project.dependencies]`, dev tools under `[dependency-groups]`) and pinned in
+`uv.lock`. Key libraries:
 - `streamlit` — GUI framework
 - `tensorflow` / `keras` — Neural network
 - `numpy`, `pandas`, `scipy` — Numerical computing
