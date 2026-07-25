@@ -1,7 +1,47 @@
 [project]
 name = "ntpn-gui"
 version = "0.1.0"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # Core
+    "streamlit>=1.31.0",
+    "tensorflow>=2.15.0",
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    # Scientific computing
+    "scipy>=1.11.0",
+    "scikit-learn>=1.3.0",
+    "scikit-image>=0.22.0",
+    # Visualization
+    "matplotlib>=3.7.0",
+    "Pillow>=10.0.0",
+    # Dimensionality reduction and TDA
+    "umap-learn>=0.5.5",
+    "kmapper>=2.0.0",
+    "ripser>=0.6.0",
+    "persim>=0.3.0",
+    "scikit-tda>=1.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "pytest-timeout>=2.2.0",
+    "ruff>=0.4.0",
+    "mypy>=1.8.0",
+]
+
+[tool.uv]
+# This is an application, not an installable library, so do not build/install
+# the project itself into the environment (the `ntpn` package is imported from
+# the working directory when running Streamlit / pytest).
+package = false
+# Force modern, Python 3.12-compatible builds of these transitive deps. Older
+# llvmlite/numba releases lack requires-python metadata and would otherwise be
+# selected by the resolver, then fail to build on Python 3.12.
+constraint-dependencies = ["llvmlite>=0.43", "numba>=0.60"]
 
 [tool.ruff]
 target-version = "py311"

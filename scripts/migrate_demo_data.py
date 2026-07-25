@@ -3,7 +3,7 @@
 Migration script to convert demo data from unsafe pickle to safe NPZ format.
 
 Usage:
-    python scripts/migrate_demo_data.py
+    uv run python scripts/migrate_demo_data.py
 """
 
 import sys

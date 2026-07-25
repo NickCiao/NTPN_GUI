@@ -1,6 +1,9 @@
 # Use Python 3.11 slim image as base
 FROM python:3.11-slim
 
+# Install uv (dependency and virtualenv manager)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 # Set working directory
 WORKDIR /app
 
@@ -12,12 +15,11 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better layer caching
-COPY requirements.txt .
-
-# Install Python dependencies (excluding problematic giotto-tda for now)
-RUN grep -v "giotto-tda" requirements.txt > requirements_filtered.txt && \
-    pip install --no-cache-dir -r requirements_filtered.txt
+# Install Python dependencies first for better layer caching.
+# Copy only the lockfiles so this layer is cached unless deps change.
+ENV UV_LINK_MODE=copy
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev
 
 # Copy application code
 COPY . .
@@ -38,4 +40,4 @@ ENV STREAMLIT_SERVER_HEADLESS=true
 ENV STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
 
 # Run the application
-ENTRYPOINT ["streamlit", "run", "NTPN_APP.py", "--server.port=8501", "--server.address=0.0.0.0"]
+ENTRYPOINT ["uv", "run", "--no-dev", "streamlit", "run", "NTPN_APP.py", "--server.port=8501", "--server.address=0.0.0.0"]

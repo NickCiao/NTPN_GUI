@@ -68,12 +68,22 @@ The app will be available at http://localhost:8501. See `DOCKER.md` for more opt
 
 ### Running Locally
 
+This project uses [uv](https://docs.astral.sh/uv/) for dependency and
+environment management.
+
 ```bash
-pip install -r requirements.txt
-streamlit run NTPN_APP.py
+# Install uv (see https://docs.astral.sh/uv/getting-started/installation/)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Create the environment and install dependencies from uv.lock
+uv sync
+
+# Run the Streamlit GUI
+uv run streamlit run NTPN_APP.py
 ```
 
-Requires Python 3.11+.
+Requires Python 3.11 or 3.12 (`uv` will provision an interpreter automatically
+if needed).
 
 ## Project Structure
 
@@ -100,14 +110,14 @@ tests/                         # Unit, integration, regression tests
 
 ```bash
 # Run tests
-pytest tests/ -v
+uv run pytest tests/ -v
 
 # Run with coverage
-pytest tests/ --cov=ntpn --cov-report=html
+uv run pytest tests/ --cov=ntpn --cov-report=html
 
 # Lint and format
-ruff check --fix ntpn/ pages/ tests/
-ruff format ntpn/ pages/ tests/
+uv run ruff check --fix ntpn/ pages/ tests/
+uv run ruff format ntpn/ pages/ tests/
 ```
 
 331 tests, 89.3% coverage. Configuration in `pyproject.toml`.
